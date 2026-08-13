@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0c0d10" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Circle Companion" />
+<title>Circle Companion</title>
+<script>
+(function(){
+  const standalone = (window.navigator.standalone === true) ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  if(standalone) document.documentElement.classList.add('standalone-app');
+})();
+</script>
+<style>
+:root{
+  --bg:#090a0d; --panel:#111319; --panel2:#171a20; --line:#2b2f38; --text:#f5f6f8; --muted:#8b909c;
+  --red:#ff4c43; --red2:#9f2e2a; --orange:#ff8a2a; --yellow:#e8cf1b; --green:#73cf2a; --teal:#1db9a6;
+  --blue:#4e96ff; --purple:#b05ae9; --cyan:#28c6d8; --shadow:0 10px 28px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
+button{font:inherit;color:inherit}
+body{touch-action:manipulation}
+.app{height:100dvh;max-width:540px;margin:0 auto;background:linear-gradient(180deg,#0c0d10 0%,#090a0d 100%);position:relative;overflow:hidden;padding-top:max(env(safe-area-inset-top),10px)}
+.main{height:calc(100dvh - 78px - max(env(safe-area-inset-bottom),8px));overflow:auto;overscroll-behavior:contain;scrollbar-width:none;padding:0 8px 14px}
+.main::-webkit-scrollbar{display:none}
+
+/* TOP COF PANEL — locked to reference image */
+.cof-panel{
+  position:relative;
+  width:100%;
+  height:auto;
+  aspect-ratio:1.43 / 1;
+  min-height:278px;
+  max-height:332px;
+  border:1px solid #30343a;
+  border-radius:14px;
+  background:
+    radial-gradient(circle at 50% 49%,#1a1c22 0,#12141a 57%,#0e1014 100%);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+  margin-bottom:8px;
+}
+
+/* glowing split header, with the centre opening around the C wedge */
+.header-rail{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:50px;
+  pointer-events:none;
+  z-index:5;
+}
+.rail-left,.rail-right{
+  position:absolute;
+  top:0;
+  height:50px;
+  border:2px solid #ff5a50;
+  filter:drop-shadow(0 0 6px rgba(255,76,67,.35));
+  background:linear-gradient(180deg,rgba(47,43,47,.95),rgba(27,28,33,.94));
+}
+.rail-left{
+  left:0;
+  width:45.5%;
+  border-radius:8px 0 0 8px;
+  clip-path:polygon(0 0,100% 0,73% 100%,0 100%);
+}
+.rail-right{
+  right:0;
+  width:45.5%;
+  border-radius:0 8px 8px 0;
+  clip-path:polygon(0 0,100% 0,100% 100%,27% 100%);
+}
+.rail-label{
+  position:absolute;
+  top:13px;
+  z-index:6;
+  font-size:18.5px;
+  line-height:1;
+  font-weight:850;
+  letter-spacing:.1px;
+  white-space:nowrap;
+}
+.rail-label.left{left:11px}
+.rail-label.right{right:11px;text-align:right}
+.rail-label .root{color:var(--red);margin-right:13px}
+.rail-label.right .root{margin:0 0 0 13px}
+.rail-label .sig{color:#eceef2;font-weight:600}
+
+/* Signature columns. The long note rows stay on one line and the right key names
+   always retain their own protected column so G/D/A/E/B/F♯ cannot be clipped. */
+.side-list{
+  position:absolute;
+  top:59px;
+  bottom:7px;
+  width:31.5%;
+  z-index:3;
+  display:grid;
+  grid-template-rows:repeat(6,minmax(0,1fr));
+}
+.side-list.left{left:10px}
+.side-list.right{
+  right:11px;
+  width:31.5%;
+  padding-right:2px;
+  text-align:right;
+}
+.sig-row{
+  min-width:0;
+  display:grid;
+  align-items:center;
+  column-gap:5px;
+  border-bottom:1px solid rgba(255,255,255,.065);
+  color:#9297a2;
+  line-height:1;
+  overflow:visible;
+}
+.side-list.left .sig-row{
+  grid-template-columns:31px 31px minmax(0,1fr);
+  text-align:left;
+}
+.side-list.right .sig-row{
+  grid-template-columns:minmax(0,1fr) 31px 31px;
+  text-align:right;
+}
+.sig-key{
+  min-width:0;
+  font-size:16.5px;
+  font-weight:900;
+  white-space:nowrap;
+  overflow:visible;
+}
+.side-list.right .sig-key{
+  width:31px;
+  justify-self:end;
+  text-align:right;
+}
+.sig-count{
+  min-width:0;
+  font-size:14.5px;
+  font-weight:650;
+  color:#b9bdc6;
+  white-space:nowrap;
+}
+.sig-notes{
+  min-width:0;
+  font-size:12px;
+  font-weight:500;
+  color:#858a95;
+  white-space:nowrap;
+  overflow:visible;
+  text-overflow:clip;
+  letter-spacing:-.15px;
+}
+.side-list.left .sig-notes{text-align:left}
+.side-list.right .sig-notes{text-align:right}
+.sig-row.active{color:#f1f2f5}
+.sig-row.active .sig-count{color:#fff}
+
+/* Reference-size wheel: large enough to dominate, but leaves full signature columns. */
+.wheel-wrap{
+  position:absolute;
+  z-index:4;
+  left:50%;
+  top:51.5%;
+  transform:translate(-50%,-50%);
+  width:61.5%;
+  max-width:268px;
+  aspect-ratio:1;
+}
+#wheel{
+  width:100%;
+  height:100%;
+  overflow:visible;
+  filter:drop-shadow(0 7px 12px rgba(0,0,0,.42));
+}
+.wedge{
+  stroke:#17191f;
+  stroke-width:1.15;
+  cursor:pointer;
+  transition:opacity .15s,filter .15s;
+}
+.wedge.active{
+  stroke:var(--active-color,#ff5a50);
+  stroke-width:2.4;
+  filter:drop-shadow(0 0 5px var(--active-color,#ff5a50));
+}
+.inner-wedge{stroke:#16181d;stroke-width:1;cursor:pointer;transition:filter .15s,stroke .15s,fill-opacity .15s}
+.inner-wedge.active{stroke:var(--active-color,#ff5a50);stroke-width:2.2;filter:drop-shadow(0 0 5px var(--active-color,#ff5a50));fill-opacity:.34}
+/* Final active-sector outline is drawn last in the SVG so adjacent wedges can never cover any side. */
+.wheel-active-outline{
+  fill:none;
+  pointer-events:none;
+  stroke:var(--active-color,#ff5a50);
+  stroke-width:2.65;
+  stroke-linejoin:round;
+  stroke-linecap:round;
+  vector-effect:non-scaling-stroke;
+  filter:drop-shadow(0 0 4px var(--active-color,#ff5a50));
+}
+.wheel-label{
+  font-size:14px;
+  font-weight:850;
+  text-anchor:middle;
+  dominant-baseline:central;
+  pointer-events:none;
+}
+.wheel-label.minor{font-size:9.5px;font-weight:750}
+.wheel-label.enharmonic-sub{font-size:7.4px;font-weight:700;opacity:.62}
+.center-ring{fill:url(#centerGrad);stroke:#963a34;stroke-width:2}
+.center-key{
+  font-size:27px;
+  font-weight:900;
+  fill:var(--red);
+  text-anchor:middle;
+  dominant-baseline:central;
+}
+
+/* Small iPhone width: keep the same composition, only trim type slightly. */
+@media (max-width:390px){
+  .cof-panel{min-height:270px}
+  .rail-label{font-size:17.5px}
+  .side-list{width:32%}
+  .side-list.right{width:32%;right:9px}
+  .side-list.left{left:9px}
+  .side-list.left .sig-row{grid-template-columns:28px 29px minmax(0,1fr)}
+  .side-list.right .sig-row{grid-template-columns:minmax(0,1fr) 29px 29px}
+  .sig-key{font-size:15.5px}
+  .sig-count{font-size:13.5px}
+  .sig-notes{font-size:10.8px;letter-spacing:-.25px}
+  .wheel-wrap{width:61%;max-width:240px}
+  .wheel-label{font-size:13.6px}
+  .wheel-label.minor{font-size:9.2px}
+  .center-key{font-size:26px}
+}
+
+/* CONTENT */
+.content{padding-bottom:6px}
+.tab-panel{display:none;animation:fade .15s ease-out}.tab-panel.active{display:block}
+@keyframes fade{from{opacity:.3;transform:translateY(3px)}to{opacity:1;transform:none}}
+.grid2{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-auto-rows:1fr;
+  column-gap:8px;
+  row-gap:8px;
+  align-items:stretch;
+}
+.grid2>*{width:100%;min-width:0}
+.card,.wide-card{background:linear-gradient(145deg,#171a20,#101216);border:1px solid #2f333b;border-radius:12px;box-shadow:0 5px 14px rgba(0,0,0,.2)}
+.card{
+  min-height:104px;
+  padding:11px 12px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:space-evenly;
+  text-align:center;
+}
+.card>.eyebrow,.card>.small,.card>.big,.card>.note-line{width:100%;text-align:center}
+.wide-card{margin-top:8px;padding:12px}
+.eyebrow{font-size:10.5px;letter-spacing:.8px;font-weight:800;text-transform:uppercase;margin-bottom:5px}.big{font-size:22px;font-weight:800;line-height:1.1}.mid{font-size:15px;font-weight:700}.small{font-size:12px;color:var(--muted);line-height:1.3}.mono{font-variant-numeric:tabular-nums}
+.red{color:var(--red)}.orange{color:var(--orange)}.green{color:var(--green)}.blue{color:var(--blue)}.purple{color:var(--purple)}.teal{color:var(--teal)}.cyan{color:var(--cyan)}
+.value-row{
+  display:grid;
+  grid-template-columns:32px minmax(0,1fr) 32px;
+  align-items:center;
+  justify-items:center;
+  gap:8px;
+  width:100%;
+}
+.value-row>*:nth-child(2){min-width:0;text-align:center}
+.mini-btn{width:32px;height:32px;border-radius:10px;border:1px solid #3a3e47;background:#1c1f25;display:grid;place-items:center;font-size:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.mini-btn:active{transform:scale(.96)}
+.pills{display:flex;gap:6px;flex-wrap:wrap}.pill{border:1px solid #383c45;background:#171a20;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:700;color:#cfd2d8}.pill.active{border-color:var(--red);color:#fff;box-shadow:0 0 0 1px rgba(255,76,67,.2),0 0 10px rgba(255,76,67,.16)}
+
+.chord-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0;margin-top:7px;align-items:stretch}
+.chord-cell{display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;text-align:center;padding:6px 2px;border-right:1px solid #30343c;min-width:0;min-height:48px}.chord-cell:last-child{border-right:0}.roman{font-size:11px;color:var(--orange);font-weight:800}.chord-name{font-size:15px;font-weight:800;margin-top:3px;white-space:nowrap}.chord-cell.selected{background:rgba(255,76,67,.08);outline:1px solid rgba(255,76,67,.42);border-radius:8px}
+.triad-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-auto-rows:1fr;
+  gap:8px;
+  margin-top:8px
+}
+.formula{
+  min-height:64px;
+  padding:9px;
+  border:1px solid #30343c;
+  background:#13161b;
+  border-radius:10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:space-evenly;
+  text-align:center
+}
+.formula b{display:block;font-size:12px;margin-bottom:4px;text-align:center}
+.formula span{font-size:12px;color:#c9ccd2;text-align:center}
+.degree-table{display:grid;grid-template-columns:36px 1fr 1.15fr 1fr;gap:1px;background:#2c3038;border:1px solid #2c3038;border-radius:10px;overflow:hidden;margin-top:8px}.degree-table>div{background:#14171c;padding:8px 7px;font-size:11px}.degree-table .th{color:#9196a2;font-weight:800;text-transform:uppercase;font-size:9px;letter-spacing:.6px}.degree-table .strong{font-weight:800;color:#f2f3f6}
+.mode-list{display:grid;grid-template-columns:1fr;gap:7px;margin-top:8px}.mode-row{display:grid;grid-template-columns:90px 1fr 30px;align-items:center;gap:8px;padding:9px 10px;border:1px solid #30343c;border-radius:10px;background:#13161b}.mode-row.active{border-color:var(--purple);box-shadow:0 0 12px rgba(176,90,233,.15)}.mode-name{font-size:13px;font-weight:800}.mode-formula{font-size:11px;color:#aeb2bb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mode-index{font-size:11px;color:#777d88;text-align:right}
+.caged-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}.caged-card{padding:10px 5px;text-align:center;border:1px solid #30343c;border-radius:10px;background:#13161b}.caged-letter{font-size:22px;font-weight:900;color:var(--green)}.caged-fret{font-size:10px;color:#aeb2bb;margin-top:2px}.caged-card.current{border-color:var(--green);box-shadow:0 0 12px rgba(115,207,42,.16)}
+.fret-strip{display:grid;grid-template-columns:repeat(13,1fr);gap:2px;margin-top:8px}.fret{height:38px;background:#12151a;border:1px solid #2b2f36;border-radius:5px;display:flex;flex-direction:column;justify-content:center;align-items:center;font-size:9px;color:#707681}.fret .note{font-size:11px;font-weight:800;color:#e8eaf0}.fret.root{border-color:var(--red);background:rgba(255,76,67,.08)}
+
+/* BOTTOM NAV */
+.nav{position:absolute;left:8px;right:8px;bottom:max(env(safe-area-inset-bottom),8px);height:70px;border:1px solid #31353e;background:rgba(17,19,24,.96);backdrop-filter:blur(16px);border-radius:16px;display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:6px;box-shadow:0 -8px 30px rgba(0,0,0,.32);z-index:20}
+.nav-btn{border:1px solid transparent;border-radius:12px;background:transparent;padding:4px 1px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0}.nav-icon{font-size:18px;line-height:1}.nav-label{font-size:9.5px;color:#b8bcc5;white-space:nowrap}.nav-btn.active{border-color:var(--red);background:linear-gradient(180deg,rgba(255,76,67,.13),rgba(255,76,67,.04));box-shadow:0 0 14px rgba(255,76,67,.16)}.nav-btn.active .nav-label{color:var(--red);font-weight:800}.nav-btn:active{transform:scale(.97)}
+
+.section-title{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#a8adb6;margin-bottom:8px}.split{display:flex;align-items:center;justify-content:space-between;gap:8px}.note-line{font-size:16px;font-weight:800;letter-spacing:2px;white-space:nowrap}.divider{height:1px;background:#2a2e35;margin:10px 0}.hint{font-size:10px;color:#717782;margin-top:6px}
+
+@media (max-height:780px){
+  .card{min-height:88px;padding:10px}
+  .big{font-size:19px}
+  .wide-card{padding:10px}
+  .nav{height:64px}
+  .main{height:calc(100dvh - 72px - max(env(safe-area-inset-bottom),8px))}
+}
+
+/* ===== USER REVISION: larger CoF panel + shorter lower cards ===== */
+
+/* Give the Circle of Fifths substantially more vertical room. */
+.cof-panel{
+  aspect-ratio:auto;
+  height:39dvh;
+  min-height:330px;
+  max-height:390px;
+  margin-bottom:6px;
+}
+.wheel-wrap{
+  width:64%;
+  max-width:292px;
+  top:52%;
+}
+
+/* Compact the lower information area without shrinking the important text. */
+.grid2{
+  column-gap:6px;
+  row-gap:6px;
+}
+.card{
+  min-height:76px;
+  padding:7px 9px;
+  justify-content:center;
+  gap:4px;
+}
+.card .eyebrow{
+  margin-bottom:2px;
+}
+.eyebrow{
+  font-size:10px;
+}
+.big{
+  font-size:21px;
+}
+.small{
+  font-size:11.5px;
+  line-height:1.15;
+}
+.note-line{
+  font-size:15.5px;
+}
+.value-row{
+  grid-template-columns:28px minmax(0,1fr) 28px;
+  gap:6px;
+}
+.mini-btn{
+  width:28px;
+  height:28px;
+  border-radius:9px;
+  font-size:17px;
+}
+
+/* Wide sections: shorter overall, while keeping the chord/formula information readable. */
+.wide-card{
+  margin-top:6px;
+  padding:8px 10px;
+}
+.section-title{
+  margin-bottom:4px;
+  font-size:10.5px;
+}
+.chord-grid{
+  margin-top:3px;
+}
+.chord-cell{
+  min-height:36px;
+  padding:3px 2px;
+}
+.roman{
+  font-size:10px;
+}
+.chord-name{
+  font-size:14px;
+  margin-top:1px;
+}
+
+.triad-grid{
+  gap:6px;
+  margin-top:4px;
+}
+.formula{
+  min-height:46px;
+  padding:5px 6px;
+}
+.formula b{
+  font-size:11.5px;
+  margin-bottom:1px;
+}
+.formula span{
+  font-size:11px;
+}
+.divider{
+  margin:6px 0;
+}
+.hint{
+  margin-top:3px;
+}
+
+/* On shorter iPhone screens, keep the same priority: CoF gets space, lower boxes compress. */
+@media (max-height:780px){
+  .cof-panel{
+    height:40dvh;
+    min-height:310px;
+    max-height:350px;
+  }
+  .wheel-wrap{
+    width:62%;
+    max-width:270px;
+  }
+  .card{
+    min-height:70px;
+    padding:6px 8px;
+  }
+  .big{font-size:19px}
+  .small{font-size:10.8px}
+  .wide-card{padding:7px 9px}
+  .formula{min-height:42px}
+  .chord-cell{min-height:34px}
+}
+
+
+/* ===== COF FIX: restore the approved Circle-of-Fifths proportions ===== */
+.cof-panel{
+  height:40dvh;
+  min-height:350px;
+  max-height:405px;
+  aspect-ratio:auto;
+  overflow:hidden;
+}
+
+/* Make the wheel fill the taller CoF box instead of floating too small in it. */
+.wheel-wrap{
+  left:50%;
+  top:51.5%;
+  width:72%;
+  max-width:318px;
+  transform:translate(-50%,-50%);
+}
+
+/* Preserve the reference colours on every key / minor label.
+   The SVG text already receives the correct individual fill colour in JS. */
+.wheel-label{
+  font-size:15px;
+  font-weight:850;
+  text-anchor:middle;
+  dominant-baseline:central;
+  pointer-events:none;
+}
+.wheel-label.minor{
+  font-size:10.3px;
+  font-weight:750;
+}
+.wheel-label.enharmonic-sub{
+  font-size:8px;
+  font-weight:700;
+  opacity:.64;
+}
+.center-key{font-size:30px}
+
+/* Slightly taller header so the top C wedge tucks into it like the reference. */
+.header-rail{height:56px}
+.rail-left,.rail-right{height:56px}
+.rail-label{
+  top:15px;
+  font-size:19px;
+}
+
+/* Keep the signature columns large/readable and protect the outer key names. */
+.side-list{
+  top:66px;
+  bottom:9px;
+  width:31.5%;
+}
+.side-list.left{left:10px}
+.side-list.right{
+  right:11px;
+  width:31.5%;
+  padding-right:3px;
+}
+.sig-key{font-size:17px}
+.sig-count{font-size:14.5px}
+.sig-notes{font-size:11.7px}
+.side-list.right .sig-row{
+  grid-template-columns:minmax(0,1fr) 31px 32px;
+}
+.side-list.right .sig-key{
+  width:32px;
+  min-width:32px;
+}
+
+/* The wheel can overlap the inner ends of the signature-note text,
+   just like the approved reference, but never the outside key labels. */
+#wheel{overflow:visible}
+.wedge{stroke-width:1.1}
+.wedge.active{stroke-width:2.35}
+
+/* Keep the same look on narrower iPhones. */
+@media (max-width:390px){
+  .cof-panel{
+    height:40dvh;
+    min-height:330px;
+    max-height:380px;
+  }
+  .wheel-wrap{
+    width:71%;
+    max-width:286px;
+  }
+  .rail-label{font-size:18px}
+  .side-list{top:64px;width:32%}
+  .side-list.left{left:8px}
+  .side-list.right{right:9px;width:32%}
+  .sig-key{font-size:16px}
+  .sig-count{font-size:13.7px}
+  .sig-notes{font-size:10.4px}
+  .wheel-label{font-size:14.2px}
+  .wheel-label.minor{font-size:9.7px}
+  .center-key{font-size:28px}
+}
+
+
+/* ===== CoF side-signature cleanup: remove count column and keep accidentals outside the wheel ===== */
+.side-list{
+  width:34%;
+}
+.side-list.left{
+  left:10px;
+  padding-right:16px;
+  box-sizing:border-box;
+}
+.side-list.right{
+  right:10px;
+  width:34%;
+  padding-left:16px;
+  padding-right:4px;
+  box-sizing:border-box;
+}
+
+.side-list.left .sig-row{
+  grid-template-columns:40px minmax(0,1fr);
+  column-gap:12px;
+}
+.side-list.right .sig-row{
+  grid-template-columns:minmax(0,1fr) 40px;
+  column-gap:12px;
+}
+
+.sig-count{
+  display:none !important;
+}
+
+.sig-key{
+  font-size:17px;
+  min-width:40px;
+}
+.side-list.right .sig-key{
+  width:40px;
+  min-width:40px;
+}
+
+.sig-notes{
+  font-size:12px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:clip;
+  letter-spacing:-.05px;
+  color:#959aa5;
+}
+.side-list.left .sig-notes{
+  text-align:left;
+  justify-self:start;
+}
+.side-list.right .sig-notes{
+  text-align:right;
+  justify-self:end;
+}
+
+/* Pull the wheel in a touch so the side accidental text no longer enters the circle. */
+.wheel-wrap{
+  width:68%;
+  max-width:304px;
+}
+
+@media (max-width:390px){
+  .side-list{
+    width:34.5%;
+  }
+  .side-list.left{
+    left:8px;
+    padding-right:14px;
+  }
+  .side-list.right{
+    right:8px;
+    width:34.5%;
+    padding-left:14px;
+    padding-right:2px;
+  }
+  .side-list.left .sig-row{
+    grid-template-columns:36px minmax(0,1fr);
+    column-gap:9px;
+  }
+  .side-list.right .sig-row{
+    grid-template-columns:minmax(0,1fr) 36px;
+    column-gap:9px;
+  }
+  .sig-key{
+    font-size:16px;
+    min-width:36px;
+  }
+  .side-list.right .sig-key{
+    width:36px;
+    min-width:36px;
+  }
+  .sig-notes{
+    font-size:10.9px;
+  }
+  .wheel-wrap{
+    width:66%;
+    max-width:286px;
+  }
+}
+
+
+/* ===== Side signature note alignment: move note lists outward toward the key labels ===== */
+.side-list{
+  width:34%;
+}
+
+.side-list.left{
+  left:10px;
+  padding-right:0;
+}
+.side-list.right{
+  right:10px;
+  width:34%;
+  padding-left:0;
+  padding-right:2px;
+}
+
+.side-list.left .sig-row{
+  grid-template-columns:40px auto;
+  column-gap:6px;
+  justify-content:start;
+}
+.side-list.right .sig-row{
+  grid-template-columns:auto 40px;
+  column-gap:6px;
+  justify-content:end;
+}
+
+.sig-key{
+  min-width:40px;
+}
+.side-list.right .sig-key{
+  width:40px;
+  min-width:40px;
+}
+
+.sig-notes{
+  white-space:nowrap;
+  overflow:visible;
+  text-overflow:clip;
+  letter-spacing:-.04px;
+}
+
+.side-list.left .sig-notes{
+  justify-self:start;
+  text-align:left;
+}
+.side-list.right .sig-notes{
+  justify-self:end;
+  text-align:right;
+}
+
+@media (max-width:390px){
+  .side-list{
+    width:34.5%;
+  }
+  .side-list.left{
+    left:8px;
+    padding-right:0;
+  }
+  .side-list.right{
+    right:8px;
+    width:34.5%;
+    padding-left:0;
+    padding-right:2px;
+  }
+  .side-list.left .sig-row{
+    grid-template-columns:36px auto;
+    column-gap:5px;
+  }
+  .side-list.right .sig-row{
+    grid-template-columns:auto 36px;
+    column-gap:5px;
+  }
+  .sig-key{
+    min-width:36px;
+  }
+  .side-list.right .sig-key{
+    width:36px;
+    min-width:36px;
+  }
+}
+
+
+/* ===== Fine adjustment: move both side note lists 5px farther away from the middle ===== */
+.side-list.left .sig-notes{
+  transform:translateX(-25px);
+}
+.side-list.right .sig-notes{
+  transform:translateX(25px);
+}
+
+@media (max-width:390px){
+  .side-list.left .sig-notes{
+    transform:translateX(-25px);
+  }
+  .side-list.right .sig-notes{
+    transform:translateX(25px);
+  }
+}
+
+
+/* ===== C-row bar cleanup: make the two top C bars perfectly matched ===== */
+.header-rail{
+  height:54px;
+}
+
+.rail-left,
+.rail-right{
+  top:0;
+  height:54px;
+  width:46%;
+  border-radius:10px;
+  border:2px solid #ff5a50;
+  background:linear-gradient(180deg,rgba(47,43,47,.95),rgba(27,28,33,.94));
+  filter:drop-shadow(0 0 6px rgba(255,76,67,.35));
+}
+
+.rail-left{
+  left:0;
+  clip-path:polygon(0 0,100% 0,83% 100%,0 100%);
+}
+
+.rail-right{
+  right:0;
+  clip-path:polygon(0 0,100% 0,100% 100%,17% 100%);
+}
+
+.rail-label{
+  top:15px;
+}
+
+/* Keep the same matched geometry on narrower iPhones */
+@media (max-width:390px){
+  .header-rail{
+    height:52px;
+  }
+  .rail-left,
+  .rail-right{
+    height:52px;
+    width:46%;
+    border-radius:9px;
+  }
+  .rail-left{
+    clip-path:polygon(0 0,100% 0,83% 100%,0 100%);
+  }
+  .rail-right{
+    clip-path:polygon(0 0,100% 0,100% 100%,17% 100%);
+  }
+  .rail-label{
+    top:14px;
+  }
+}
+
+
+/* ===== Fine adjustment: shrink the Circle of Fifths by 10px and keep it centered ===== */
+.wheel-wrap{
+  max-width:294px; /* was effectively 304px */
+  left:50%;
+  transform:translate(-50%,-50%);
+}
+
+@media (max-width:390px){
+  .wheel-wrap{
+    max-width:276px; /* was effectively 286px */
+    left:50%;
+    transform:translate(-50%,-50%);
+  }
+}
+
+
+/* ===== Fine adjustment: move the entire side key/signature groups 5px farther outward ===== */
+.side-list.left .sig-row{
+  transform:translateX(-5px);
+}
+.side-list.right .sig-row{
+  transform:translateX(5px);
+}
+
+@media (max-width:390px){
+  .side-list.left .sig-row{
+    transform:translateX(-5px);
+  }
+  .side-list.right .sig-row{
+    transform:translateX(5px);
+  }
+}
+
+
+/* ===== Permanent change: remove outline/glow from the top C row bars ===== */
+.rail-left,
+.rail-right{
+  border:none !important;
+  filter:none !important;
+  box-shadow:none !important;
+}
+
+
+/* ===== C ROW: same size/shape/style as the bottom signature rows ===== */
+
+/* Remove the old large split C-row bars completely. */
+.header-rail{
+  display:none !important;
+}
+
+/* Make each C header behave like one normal signature-list row. */
+.rail-label{
+  top:8px !important;
+  height:48px;
+  display:flex;
+  align-items:center;
+  z-index:6;
+  padding:0;
+  border-bottom:1px solid rgba(255,255,255,.065);
+  background:transparent !important;
+  filter:none !important;
+  box-shadow:none !important;
+  font-size:17px !important;
+  line-height:1;
+  font-weight:850;
+}
+
+/* Exact same left/right widths and outside alignment as the bottom rows. */
+.rail-label.left{
+  left:5px !important;
+  width:34%;
+  justify-content:flex-start;
+  text-align:left;
+}
+.rail-label.right{
+  right:5px !important;
+  width:34%;
+  justify-content:flex-end;
+  text-align:right;
+}
+
+/* Match the spacing used by the other key rows. */
+.rail-label .root{
+  font-size:17px;
+  font-weight:900;
+  min-width:40px;
+  margin:0 6px 0 0 !important;
+}
+.rail-label.right .root{
+  order:2;
+  margin:0 0 0 6px !important;
+  min-width:40px;
+  text-align:right;
+}
+.rail-label .sig{
+  font-size:12px;
+  font-weight:500;
+  color:#959aa5;
+  white-space:nowrap;
+}
+
+/* Start the six remaining rows immediately beneath the new C row. */
+.side-list{
+  top:56px !important;
+}
+
+@media (max-width:390px){
+  .rail-label{
+    top:7px !important;
+    height:46px;
+    font-size:16px !important;
+  }
+  .rail-label.left{
+    left:3px !important;
+    width:34.5%;
+  }
+  .rail-label.right{
+    right:3px !important;
+    width:34.5%;
+  }
+  .rail-label .root{
+    font-size:16px;
+    min-width:36px;
+    margin-right:5px !important;
+  }
+  .rail-label.right .root{
+    min-width:36px;
+    margin-left:5px !important;
+  }
+  .rail-label .sig{
+    font-size:10.9px;
+  }
+  .side-list{
+    top:53px !important;
+  }
+}
+
+
+/* ===== Signature-row spacing: keep key names fixed; spread only signature notes toward the circle ===== */
+.sig-row{position:relative}
+.side-list .sig-notes.signature-spread{
+  position:absolute;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  white-space:nowrap;
+  transform:none !important;
+  overflow:visible;
+  text-align:center;
+  z-index:1;
+}
+.side-list .sig-notes.signature-spread > span{
+  display:block;
+  flex:0 0 auto;
+}
+
+
+
+/* ===== Vertical scroll lock: keep every app section fixed ===== */
+html, body, .app {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+.main {
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  overscroll-behavior: none !important;
+  -webkit-overflow-scrolling: auto !important;
+  touch-action: manipulation;
+}
+.content, .tab-panel, .cof-panel, .wide-card, .card {
+  overflow-y: hidden !important;
+}
+
+
+/* ===== Page fit rebalance: fill short tabs, compress dense tabs, never scroll ===== */
+.main{
+  display:flex !important;
+  flex-direction:column !important;
+  min-height:0 !important;
+}
+.cof-panel{
+  flex:0 0 auto !important;
+}
+.content{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  padding-bottom:0 !important;
+  overflow:hidden !important;
+}
+.tab-panel{
+  height:100% !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+.tab-panel.active{
+  display:flex !important;
+  flex-direction:column !important;
+  min-height:0 !important;
+}
+
+/* KEY — use the whole remaining page without making any one box oversized. */
+.tab-panel[data-panel="key"]{
+  gap:6px;
+}
+.tab-panel[data-panel="key"] > .grid2{
+  flex:1.45 1 0;
+  min-height:0;
+  grid-template-rows:repeat(2,minmax(0,1fr));
+}
+.tab-panel[data-panel="key"] > .wide-card{
+  flex:0.78 1 0;
+  min-height:0;
+  margin-top:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.tab-panel[data-panel="key"] > .wide-card .chord-grid,
+.tab-panel[data-panel="key"] > .wide-card .triad-grid{
+  flex:1 1 auto;
+  min-height:0;
+  align-items:stretch;
+}
+.tab-panel[data-panel="key"] > .wide-card .chord-cell,
+.tab-panel[data-panel="key"] > .wide-card .formula{
+  min-height:0;
+  height:100%;
+}
+
+/* MODE — seven mode rows are the densest list, so divide the card evenly. */
+.tab-panel[data-panel="mode"] > .wide-card{
+  flex:1 1 auto;
+  min-height:0;
+  height:100%;
+  padding:7px 10px;
+  display:flex;
+  flex-direction:column;
+}
+.tab-panel[data-panel="mode"] .mode-list{
+  flex:1 1 auto;
+  min-height:0;
+  display:grid;
+  grid-template-rows:repeat(7,minmax(0,1fr));
+  gap:4px;
+  margin-top:5px;
+}
+.tab-panel[data-panel="mode"] .mode-row{
+  min-height:0;
+  padding:4px 8px;
+}
+
+/* CHORDS — stretch both cards to fill the page, but keep detail rows compact enough to fit. */
+.tab-panel[data-panel="chords"]{
+  gap:6px;
+}
+.tab-panel[data-panel="chords"] > .wide-card{
+  margin-top:0;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.tab-panel[data-panel="chords"] > .wide-card:first-child{flex:0.95 1 0}
+.tab-panel[data-panel="chords"] > .wide-card:last-child{flex:1.05 1 0}
+.tab-panel[data-panel="chords"] .degree-table{
+  flex:1 1 auto;
+  min-height:0;
+  margin-top:4px;
+}
+.tab-panel[data-panel="chords"] .degree-table > div{
+  padding:4px 6px;
+}
+
+/* TRIADS — expand the two main cards into the available space. */
+.tab-panel[data-panel="triads"]{
+  gap:6px;
+}
+.tab-panel[data-panel="triads"] > .wide-card{
+  margin-top:0;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.tab-panel[data-panel="triads"] > .wide-card:first-child{flex:1.18 1 0}
+.tab-panel[data-panel="triads"] > .wide-card:last-child{flex:0.82 1 0}
+.tab-panel[data-panel="triads"] .triad-grid{
+  flex:1 1 auto;
+  min-height:0;
+  align-items:stretch;
+}
+.tab-panel[data-panel="triads"] .formula{height:100%;min-height:0}
+.tab-panel[data-panel="triads"] .pills{justify-content:center}
+
+/* SCALE — seven degree rows share all remaining height rather than overflowing. */
+.tab-panel[data-panel="scale"] > .wide-card{
+  flex:1 1 auto;
+  min-height:0;
+  height:100%;
+  padding:7px 10px;
+  display:flex;
+  flex-direction:column;
+}
+.tab-panel[data-panel="scale"] .degree-table{
+  flex:1 1 auto;
+  min-height:0;
+  margin-top:5px;
+}
+.tab-panel[data-panel="scale"] .degree-table > div{
+  min-height:0;
+  padding:4px 6px;
+  display:flex;
+  align-items:center;
+}
+
+/* CAGED — both sections stretch evenly and the fret strip stays fully visible. */
+.tab-panel[data-panel="caged"]{
+  gap:6px;
+}
+.tab-panel[data-panel="caged"] > .wide-card{
+  margin-top:0;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.tab-panel[data-panel="caged"] > .wide-card:first-child{flex:1.12 1 0}
+.tab-panel[data-panel="caged"] > .wide-card:last-child{flex:0.88 1 0}
+.tab-panel[data-panel="caged"] .caged-grid{
+  flex:1 1 auto;
+  min-height:0;
+  align-items:stretch;
+}
+.tab-panel[data-panel="caged"] .caged-card{
+  min-height:0;
+  padding:5px 4px;
+}
+.tab-panel[data-panel="caged"] .fret-strip{
+  margin-top:5px;
+}
+.tab-panel[data-panel="caged"] .fret{
+  height:32px;
+}
+
+/* Extra vertical compression only on short displays. */
+@media (max-height:780px){
+  .tab-panel[data-panel="mode"] .mode-row{padding:3px 7px}
+  .mode-name{font-size:12px}
+  .mode-formula{font-size:10px}
+  .tab-panel[data-panel="chords"] .degree-table > div,
+  .tab-panel[data-panel="scale"] .degree-table > div{padding:3px 5px;font-size:10px}
+  .tab-panel[data-panel="caged"] .caged-letter{font-size:19px}
+  .tab-panel[data-panel="caged"] .fret{height:28px}
+  .tab-panel[data-panel="triads"] .pill{padding:5px 8px}
+}
+
+
+
+/* ===== Right-side key restore: keep signatures exactly positioned, pin coloured keys to far right ===== */
+.side-list.right .sig-key{
+  grid-column:2 !important;
+  justify-self:end !important;
+  text-align:right !important;
+}
+
+/* ===== Fine adjustment: top sharp-side F only =====
+   Move only the first-row F farther away from the Circle so its visible gap
+   matches the F on the row directly beneath it. No other signature/key moves. */
+.side-list.right .sig-row:first-child .sig-notes.signature-spread{
+  transform:translateX(20px) !important;
+}
+
+/* ===== Fine adjustment: top flat-side B only =====
+   Place the first-row B at the circle-side end of its signature lane and give it
+   the same 20px extra clearance from the Circle as the top F on the right. */
+.side-list.left .sig-row:first-child .sig-notes.signature-spread{
+  justify-content:flex-end !important;
+  transform:translateX(-20px) !important;
+}
+
+
+/* ===== Exact left/right Circle gap mirror =====
+   Left-row positions are now calculated from the actual visible right-row gaps.
+   Disable the old manual top-B offset so it cannot double-shift the mirrored result. */
+.side-list.left .sig-row:first-child .sig-notes.signature-spread{
+  transform:none !important;
+}
+
+
+/* ===== HOME-SCREEN APP FOOTER FIX =====
+   In iOS standalone/Home Screen mode there is no Safari bottom toolbar.
+   Anchor the tab bar to the actual viewport bottom instead of lifting it by
+   safe-area-inset-bottom, and give every tab the reclaimed vertical space. */
+html.standalone-app .nav{
+  position:fixed !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:8px !important;
+  width:min(calc(100vw - 16px),524px) !important;
+  height:70px !important;
+  transform:translateX(-50%);
+}
+html.standalone-app .main{
+  height:calc(100dvh - 78px) !important;
+}
+
+@media (max-height:780px){
+  html.standalone-app .nav{
+    bottom:8px !important;
+    height:64px !important;
+  }
+  html.standalone-app .main{
+    height:calc(100dvh - 72px) !important;
+  }
+}
+
+
+
+/* ===== KEY TAB TYPOGRAPHY / SPACING FIX =====
+   1) Center the two lower-section titles in their cards.
+   2) Raise only the C Major and Ionian value labels by 3px.
+   3) Reserve clean vertical room for the supporting text underneath so it
+      remains fully visible and cannot collide with the next row. */
+.tab-panel[data-panel="key"] > .wide-card > .section-title{
+  width:100% !important;
+  text-align:center !important;
+}
+
+.tab-panel[data-panel="key"] > .grid2 > .card:nth-child(1) #keyName,
+.tab-panel[data-panel="key"] > .grid2 > .card:nth-child(2) #modeName{
+  transform:translateY(-3px);
+}
+
+/* Give the first-row cards a little more breathing room without changing
+   the typography or the second-row card layout. */
+.tab-panel[data-panel="key"] > .grid2{
+  grid-template-rows:minmax(0,1.08fr) minmax(0,.92fr) !important;
+}
+
+.tab-panel[data-panel="key"] > .grid2 > .card:nth-child(1),
+.tab-panel[data-panel="key"] > .grid2 > .card:nth-child(2){
+  padding-top:6px !important;
+  padding-bottom:7px !important;
+  gap:2px !important;
+  overflow:hidden !important;
+}
+
+/* Keep the lower descriptive lines inside their own reserved area. */
+#relativeMinor,
+#modeSubtitle{
+  position:relative;
+  z-index:1;
+  margin-top:0 !important;
+  margin-bottom:0 !important;
+  line-height:1.12 !important;
+  flex:0 0 auto;
+}
+
+#relativeMinor{
+  padding-bottom:1px;
+}
+
+#modeSubtitle{
+  padding-bottom:2px;
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <main class="main" id="mainScroll">
+    <section class="cof-panel" id="cofPanel">
+      <div class="header-rail"><div class="rail-left"></div><div class="rail-right"></div></div>
+      <div class="rail-label left"><span class="root" id="leftHeaderRoot">C</span><span class="sig" id="leftHeaderSig">0♭ —</span></div>
+      <div class="rail-label right"><span class="sig" id="rightHeaderSig">— 0♯</span><span class="root" id="rightHeaderRoot">C</span></div>
+      <div class="side-list left" id="flatList">
+        <div class="sig-row"><span class="sig-key" style="color:#76c62d">F</span><span class="sig-notes">B</span></div>
+        <div class="sig-row"><span class="sig-key" style="color:#6654d7">B♭</span><span class="sig-notes">B E</span></div>
+        <div class="sig-row"><span class="sig-key" style="color:#d5a11d">E♭</span><span class="sig-notes">B E A</span></div>
+        <div class="sig-row"><span class="sig-key" style="color:#20aebf">A♭</span><span class="sig-notes">B E A D</span></div>
+        <div class="sig-row"><span class="sig-key" style="color:#d85b2a">D♭</span><span class="sig-notes">B E A D G</span></div>
+        <div class="sig-row"><span class="sig-key" style="color:#76c62d">G♭</span><span class="sig-notes">B E A D G C</span></div>
+      </div>
+      <div class="wheel-wrap"><svg id="wheel" viewBox="0 0 300 300" aria-label="Circle of Fifths"><defs><radialGradient id="centerGrad"><stop offset="0" stop-color="#181a1f"/><stop offset="1" stop-color="#0d0f13"/></radialGradient></defs><path class="wedge active" data-key-index="0" d="M 112.471 9.941 A 145 145 0 0 1 187.529 9.941 L 171.223 70.794 A 82 82 0 0 0 128.777 70.794 Z" fill="#ff5148" fill-opacity=".31"/><text class="wheel-label" x="150.000" y="36.000" fill="#ff5148">C</text><path class="inner-wedge" d="M 128.777 70.794 A 82 82 0 0 1 171.223 70.794 L 161.388 107.499 A 44 44 0 0 0 138.612 107.499 Z" fill="#ff5148" fill-opacity=".22"/><text class="wheel-label minor" x="150.000" y="82.000" fill="#ff5148">Am</text><path class="wedge " data-key-index="1" d="M 187.529 9.941 A 145 145 0 0 1 252.530 47.470 L 207.983 92.017 A 82 82 0 0 0 171.223 70.794 Z" fill="#19b6a2" fill-opacity=".31"/><text class="wheel-label" x="207.000" y="51.273" fill="#19b6a2">G</text><path class="inner-wedge" d="M 171.223 70.794 A 82 82 0 0 1 207.983 92.017 L 181.113 118.887 A 44 44 0 0 0 161.388 107.499 Z" fill="#19b6a2" fill-opacity=".22"/><text class="wheel-label minor" x="184.000" y="91.110" fill="#19b6a2">Em</text><path class="wedge " data-key-index="2" d="M 252.530 47.470 A 145 145 0 0 1 290.059 112.471 L 229.206 128.777 A 82 82 0 0 0 207.983 92.017 Z" fill="#ef8427" fill-opacity=".31"/><text class="wheel-label" x="248.727" y="93.000" fill="#ef8427">D</text><path class="inner-wedge" d="M 207.983 92.017 A 82 82 0 0 1 229.206 128.777 L 192.501 138.612 A 44 44 0 0 0 181.113 118.887 Z" fill="#ef8427" fill-opacity=".22"/><text class="wheel-label minor" x="208.890" y="116.000" fill="#ef8427">Bm</text><path class="wedge " data-key-index="3" d="M 290.059 112.471 A 145 145 0 0 1 290.059 187.529 L 229.206 171.223 A 82 82 0 0 0 229.206 128.777 Z" fill="#4b8ef1" fill-opacity=".31"/><text class="wheel-label" x="264.000" y="150.000" fill="#4b8ef1">A</text><path class="inner-wedge" d="M 229.206 128.777 A 82 82 0 0 1 229.206 171.223 L 192.501 161.388 A 44 44 0 0 0 192.501 138.612 Z" fill="#4b8ef1" fill-opacity=".22"/><text class="wheel-label minor" x="218.000" y="150.000" fill="#4b8ef1">F♯m</text><path class="wedge " data-key-index="4" d="M 290.059 187.529 A 145 145 0 0 1 252.530 252.530 L 207.983 207.983 A 82 82 0 0 0 229.206 171.223 Z" fill="#e0cf16" fill-opacity=".31"/><text class="wheel-label" x="248.727" y="207.000" fill="#e0cf16">E</text><path class="inner-wedge" d="M 229.206 171.223 A 82 82 0 0 1 207.983 207.983 L 181.113 181.113 A 44 44 0 0 0 192.501 161.388 Z" fill="#e0cf16" fill-opacity=".22"/><text class="wheel-label minor" x="208.890" y="184.000" fill="#e0cf16">C♯m</text><path class="wedge " data-key-index="5" d="M 252.530 252.530 A 145 145 0 0 1 187.529 290.059 L 171.223 229.206 A 82 82 0 0 0 207.983 207.983 Z" fill="#ad58db" fill-opacity=".31"/><text class="wheel-label" x="207.000" y="248.727" fill="#ad58db">B</text><path class="inner-wedge" d="M 207.983 207.983 A 82 82 0 0 1 171.223 229.206 L 161.388 192.501 A 44 44 0 0 0 181.113 181.113 Z" fill="#ad58db" fill-opacity=".22"/><text class="wheel-label minor" x="184.000" y="208.890" fill="#ad58db">G♯m</text><path class="wedge " data-key-index="6" d="M 187.529 290.059 A 145 145 0 0 1 112.471 290.059 L 128.777 229.206 A 82 82 0 0 0 171.223 229.206 Z" fill="#2dc878" fill-opacity=".31"/><text class="wheel-label" x="150.000" y="264.000" fill="#2dc878">F♯ / G♭</text><path class="inner-wedge" d="M 171.223 229.206 A 82 82 0 0 1 128.777 229.206 L 138.612 192.501 A 44 44 0 0 0 161.388 192.501 Z" fill="#2dc878" fill-opacity=".22"/><text class="wheel-label minor" x="150.000" y="218.000" fill="#2dc878">D♯m</text><path class="wedge " data-key-index="7" d="M 112.471 290.059 A 145 145 0 0 1 47.470 252.530 L 92.017 207.983 A 82 82 0 0 0 128.777 229.206 Z" fill="#d85b2a" fill-opacity=".31"/><text class="wheel-label" x="93.000" y="248.727" fill="#d85b2a">D♭</text><path class="inner-wedge" d="M 128.777 229.206 A 82 82 0 0 1 92.017 207.983 L 118.887 181.113 A 44 44 0 0 0 138.612 192.501 Z" fill="#d85b2a" fill-opacity=".22"/><text class="wheel-label minor" x="116.000" y="208.890" fill="#d85b2a">B♭m</text><path class="wedge " data-key-index="8" d="M 47.470 252.530 A 145 145 0 0 1 9.941 187.529 L 70.794 171.223 A 82 82 0 0 0 92.017 207.983 Z" fill="#20aebf" fill-opacity=".31"/><text class="wheel-label" x="51.273" y="207.000" fill="#20aebf">A♭</text><path class="inner-wedge" d="M 92.017 207.983 A 82 82 0 0 1 70.794 171.223 L 107.499 161.388 A 44 44 0 0 0 118.887 181.113 Z" fill="#20aebf" fill-opacity=".22"/><text class="wheel-label minor" x="91.110" y="184.000" fill="#20aebf">Fm</text><path class="wedge " data-key-index="9" d="M 9.941 187.529 A 145 145 0 0 1 9.941 112.471 L 70.794 128.777 A 82 82 0 0 0 70.794 171.223 Z" fill="#d5a11d" fill-opacity=".31"/><text class="wheel-label" x="36.000" y="150.000" fill="#d5a11d">E♭</text><path class="inner-wedge" d="M 70.794 171.223 A 82 82 0 0 1 70.794 128.777 L 107.499 138.612 A 44 44 0 0 0 107.499 161.388 Z" fill="#d5a11d" fill-opacity=".22"/><text class="wheel-label minor" x="82.000" y="150.000" fill="#d5a11d">Cm</text><path class="wedge " data-key-index="10" d="M 9.941 112.471 A 145 145 0 0 1 47.470 47.470 L 92.017 92.017 A 82 82 0 0 0 70.794 128.777 Z" fill="#6654d7" fill-opacity=".31"/><text class="wheel-label" x="51.273" y="93.000" fill="#6654d7">B♭</text><path class="inner-wedge" d="M 70.794 128.777 A 82 82 0 0 1 92.017 92.017 L 118.887 118.887 A 44 44 0 0 0 107.499 138.612 Z" fill="#6654d7" fill-opacity=".22"/><text class="wheel-label minor" x="91.110" y="116.000" fill="#6654d7">Gm</text><path class="wedge " data-key-index="11" d="M 47.470 47.470 A 145 145 0 0 1 112.471 9.941 L 128.777 70.794 A 82 82 0 0 0 92.017 92.017 Z" fill="#76c62d" fill-opacity=".31"/><text class="wheel-label" x="93.000" y="51.273" fill="#76c62d">F</text><path class="inner-wedge" d="M 92.017 92.017 A 82 82 0 0 1 128.777 70.794 L 138.612 107.499 A 44 44 0 0 0 118.887 118.887 Z" fill="#76c62d" fill-opacity=".22"/><text class="wheel-label minor" x="116.000" y="91.110" fill="#76c62d">Dm</text><circle class="center-ring" cx="150" cy="150" r="38"/><text class="center-key" x="150" y="151">C</text></svg></div>
+      <div class="side-list right" id="sharpList">
+        <div class="sig-row"><span class="sig-notes">F</span><span class="sig-key" style="color:#19b6a2">G</span></div>
+        <div class="sig-row"><span class="sig-notes">F C</span><span class="sig-key" style="color:#ef8427">D</span></div>
+        <div class="sig-row"><span class="sig-notes">F C G</span><span class="sig-key" style="color:#4b8ef1">A</span></div>
+        <div class="sig-row"><span class="sig-notes">F C G D</span><span class="sig-key" style="color:#e0cf16">E</span></div>
+        <div class="sig-row"><span class="sig-notes">F C G D A</span><span class="sig-key" style="color:#ad58db">B</span></div>
+        <div class="sig-row"><span class="sig-notes">F C G D A E</span><span class="sig-key" style="color:#2dc878">F♯</span></div>
+      </div>
+    </section>
+
+    <section class="content">
+      <div class="tab-panel active" data-panel="key">
+        <div class="grid2">
+          <div class="card">
+            <div class="eyebrow red">Active key</div>
+            <div class="value-row"><button class="mini-btn" data-action="key-prev">‹</button><div style="text-align:center"><div class="big" id="keyName">C Major</div><div class="small" id="relativeMinor">Relative minor · A minor</div></div><button class="mini-btn" data-action="key-next">›</button></div>
+          </div>
+          <div class="card">
+            <div class="eyebrow purple">Mode</div>
+            <div class="value-row"><button class="mini-btn" data-action="mode-prev">‹</button><div class="big" id="modeName">Ionian</div><button class="mini-btn" data-action="mode-next">›</button></div>
+            <div class="small" id="modeSubtitle">Major scale</div>
+          </div>
+          <div class="card">
+            <div class="eyebrow blue">Scale notes</div>
+            <div class="note-line" id="scaleNotes">C D E F G A B</div>
+            <div class="small" id="scaleFormula">1 2 3 4 5 6 7</div>
+          </div>
+          <div class="card">
+            <div class="eyebrow green">Key signature</div>
+            <div class="big mono" id="signatureCount">0 accidentals</div>
+            <div class="small" id="signatureNotes">No sharps or flats</div>
+          </div>
+        </div>
+        <div class="wide-card">
+          <div class="section-title orange">Diatonic chords · Roman numerals</div>
+          <div class="chord-grid" id="keyChordGrid"><div class="chord-cell"><div class="roman">I</div><div class="chord-name">C</div></div><div class="chord-cell"><div class="roman">ii</div><div class="chord-name">Dm</div></div><div class="chord-cell"><div class="roman">iii</div><div class="chord-name">Em</div></div><div class="chord-cell"><div class="roman">IV</div><div class="chord-name">F</div></div><div class="chord-cell"><div class="roman">V</div><div class="chord-name">G</div></div><div class="chord-cell"><div class="roman">vi</div><div class="chord-name">Am</div></div><div class="chord-cell"><div class="roman">vii°</div><div class="chord-name">Bdim</div></div></div>
+        </div>
+        <div class="wide-card">
+          <div class="section-title purple">Triad formulas</div>
+          <div class="triad-grid">
+            <div class="formula"><b class="green">Major</b><span>1 · 3 · 5</span></div>
+            <div class="formula"><b class="blue">Minor</b><span>1 · ♭3 · 5</span></div>
+            <div class="formula"><b class="purple">Diminished</b><span>1 · ♭3 · ♭5</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-panel="mode">
+        <div class="wide-card" style="margin-top:0">
+          <div class="split"><div><div class="section-title purple">Mode selector</div><div class="big" id="modeHero">Ionian</div><div class="small" id="modeHeroDesc">Major scale · bright and resolved</div></div><div class="big purple" id="modeHeroIndex">I</div></div>
+          <div class="mode-list" id="modeList"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-panel="chords">
+        <div class="wide-card" style="margin-top:0">
+          <div class="section-title orange">Diatonic chord browser</div>
+          <div class="chord-grid" id="chordBrowser"></div>
+          <div class="divider"></div>
+          <div class="grid2">
+            <div><div class="eyebrow orange">Selected chord</div><div class="big" id="selectedChord">C</div><div class="small" id="selectedRoman">I · Major</div></div>
+            <div><div class="eyebrow blue">Chord tones</div><div class="big" id="selectedTones">C E G</div><div class="small" id="selectedFormula">1 · 3 · 5</div></div>
+          </div>
+        </div>
+        <div class="wide-card"><div class="section-title">Chord detail</div><div class="degree-table" id="chordDetail"></div></div>
+      </div>
+
+      <div class="tab-panel" data-panel="triads">
+        <div class="wide-card" style="margin-top:0">
+          <div class="section-title purple">Triads in the active scale</div>
+          <div class="triad-grid">
+            <div class="formula"><b class="green">Major</b><span>R · 3 · 5</span></div>
+            <div class="formula"><b class="blue">Minor</b><span>R · ♭3 · 5</span></div>
+            <div class="formula"><b class="purple">Dim</b><span>R · ♭3 · ♭5</span></div>
+          </div>
+          <div class="divider"></div>
+          <div class="section-title">Build from scale degree</div>
+          <div class="pills" id="triadDegreePills"></div>
+        </div>
+        <div class="wide-card">
+          <div class="grid2">
+            <div><div class="eyebrow red">Chord root</div><div class="big" id="triadRoot">C</div><div class="small" id="triadQuality">Major triad</div></div>
+            <div><div class="eyebrow teal">3rd + 5th</div><div class="big" id="triad35">E · G</div><div class="small" id="triadAllTones">C · E · G</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-panel="scale">
+        <div class="wide-card" style="margin-top:0">
+          <div class="section-title blue">Scale map</div>
+          <div class="split"><div><div class="big" id="scaleHero">C Ionian</div><div class="small" id="scaleHeroNotes">C D E F G A B</div></div><div class="big blue">1→7</div></div>
+          <div class="degree-table" id="scaleTable"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-panel="caged">
+        <div class="wide-card" style="margin-top:0">
+          <div class="section-title green">CAGED companion</div>
+          <div class="big" id="cagedHero">C major · shape positions</div>
+          <div class="small">Reference frets for the five movable CAGED forms. Tap a shape to highlight its reference fret.</div>
+          <div class="caged-grid" id="cagedGrid"></div>
+        </div>
+        <div class="wide-card">
+          <div class="section-title">12-fret reference</div>
+          <div class="fret-strip" id="fretStrip"></div>
+          <div class="hint">Reference fret = where the open-form chord shape is transposed to produce the active tonic.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="nav" aria-label="App sections">
+    <button class="nav-btn active" data-tab="key"><span class="nav-icon red">◎</span><span class="nav-label">Key</span></button>
+    <button class="nav-btn" data-tab="mode"><span class="nav-icon purple">♪</span><span class="nav-label">Mode</span></button>
+    <button class="nav-btn" data-tab="chords"><span class="nav-icon orange">▦</span><span class="nav-label">Chords</span></button>
+    <button class="nav-btn" data-tab="triads"><span class="nav-icon purple">△</span><span class="nav-label">Triads</span></button>
+    <button class="nav-btn" data-tab="scale"><span class="nav-icon blue">•••</span><span class="nav-label">Scale</span></button>
+    <button class="nav-btn" data-tab="caged"><span class="nav-icon green">▥</span><span class="nav-label">CAGED</span></button>
+  </nav>
+</div>
+<script>
+(() => {
+  const CIRCLE_KEYS = ['C','G','D','A','E','B','F#','Db','Ab','Eb','Bb','F'];
+  const COLORS = ['#ff5148','#19b6a2','#ef8427','#4b8ef1','#e0cf16','#ad58db','#2dc878','#d85b2a','#20aebf','#d5a11d','#6654d7','#76c62d'];
+  const ROOT_PC = {C:0,'C#':1,Db:1,D:2,'D#':3,Eb:3,E:4,F:5,'F#':6,Gb:6,G:7,'G#':8,Ab:8,A:9,'A#':10,Bb:10,B:11};
+  const NAT = {C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+  const LETTERS = ['C','D','E','F','G','A','B'];
+  const MODES = [
+    {name:'Ionian', roman:'I', intervals:[0,2,4,5,7,9,11], degrees:['1','2','3','4','5','6','7'], desc:'Major scale · bright and resolved'},
+    {name:'Dorian', roman:'II', intervals:[0,2,3,5,7,9,10], degrees:['1','2','♭3','4','5','6','♭7'], desc:'Minor color · natural 6'},
+    {name:'Phrygian', roman:'III', intervals:[0,1,3,5,7,8,10], degrees:['1','♭2','♭3','4','5','♭6','♭7'], desc:'Dark minor color · flat 2'},
+    {name:'Lydian', roman:'IV', intervals:[0,2,4,6,7,9,11], degrees:['1','2','3','♯4','5','6','7'], desc:'Major color · raised 4'},
+    {name:'Mixolydian', roman:'V', intervals:[0,2,4,5,7,9,10], degrees:['1','2','3','4','5','6','♭7'], desc:'Major color · flat 7'},
+    {name:'Aeolian', roman:'VI', intervals:[0,2,3,5,7,8,10], degrees:['1','2','♭3','4','5','♭6','♭7'], desc:'Natural minor scale'},
+    {name:'Locrian', roman:'VII', intervals:[0,1,3,5,6,8,10], degrees:['1','♭2','♭3','4','♭5','♭6','♭7'], desc:'Diminished tonic · flat 2 and 5'}
+  ];
+  const MODE_TRIADS = [
+    ['maj','min','min','maj','maj','min','dim'],
+    ['min','min','maj','maj','min','dim','maj'],
+    ['min','maj','maj','min','dim','maj','min'],
+    ['maj','maj','min','dim','maj','min','min'],
+    ['maj','min','dim','maj','min','min','maj'],
+    ['min','dim','maj','min','min','maj','maj'],
+    ['dim','maj','min','min','maj','maj','min']
+  ];
+  const QUALITY = {
+    maj:{label:'Major',suffix:'',formula:'1 · 3 · 5'},
+    min:{label:'Minor',suffix:'m',formula:'1 · ♭3 · 5'},
+    dim:{label:'Diminished',suffix:'dim',formula:'1 · ♭3 · ♭5'}
+  };
+  const ROMAN_BASE = ['I','II','III','IV','V','VI','VII'];
+  const FLATS = [
+    ['F',1,'B'],['Bb',2,'B,E'],['Eb',3,'B,E,A'],['Ab',4,'B,E,A,D'],['Db',5,'B,E,A,D,G'],['Gb',6,'B,E,A,D,G,C']
+  ];
+  const SHARPS = [
+    ['G',1,'F'],['D',2,'F,C'],['A',3,'F,C,G'],['E',4,'F,C,G,D'],['B',5,'F,C,G,D,A'],['F#',6,'F,C,G,D,A,E']
+  ];
+  const REL_MINOR = {C:'A',G:'E',D:'B',A:'F#',E:'C#',B:'G#','F#':'D#',Db:'Bb',Ab:'F',Eb:'C',Bb:'G',F:'D'};
+  const OPEN_FORM_PC = {C:0,A:9,G:7,E:4,D:2};
+  const SHAPE_ORDER = ['C','A','G','E','D'];
+
+  const state = { keyIndex:0, root:'C', wheelRing:'outer', modeIndex:0, chordDegree:0, triadDegree:0, cagedShape:'C' };
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+
+  function parseRoot(root){
+    const letter = root[0];
+    const acc = root.slice(1);
+    let pc = NAT[letter];
+    if(acc==='#') pc=(pc+1)%12;
+    if(acc==='b') pc=(pc+11)%12;
+    return {letter,pc};
+  }
+  function spellScale(root, intervals){
+    const {letter,pc:rootPc}=parseRoot(root);
+    const start = LETTERS.indexOf(letter);
+    return intervals.map((int,i)=>{
+      const L=LETTERS[(start+i)%7];
+      const natural=NAT[L];
+      const target=(rootPc+int)%12;
+      const d=(target-natural+12)%12;
+      const acc = d===0?'':d===1?'#':d===2?'##':d===11?'b':d===10?'bb':'?';
+      return L+acc;
+    });
+  }
+  function pretty(n){return n.replaceAll('##','𝄪').replaceAll('bb','𝄫').replaceAll('#','♯').replaceAll('b','♭')}
+  function currentRoot(){return state.root}
+  function currentMode(){return MODES[state.modeIndex]}
+  function scaleNotes(){return spellScale(currentRoot(),currentMode().intervals)}
+  function countAccidentals(notes){
+    let sharps=0,flats=0; const items=[];
+    notes.forEach(n=>{if(n.includes('#')){sharps += (n.match(/#/g)||[]).length;items.push(pretty(n))} if(n.includes('b')){flats += (n.match(/b/g)||[]).length;items.push(pretty(n))}});
+    return {sharps,flats,items};
+  }
+  function romanFor(i,q){
+    const b=ROMAN_BASE[i];
+    if(q==='maj') return b;
+    if(q==='min') return b.toLowerCase();
+    return b.toLowerCase()+'°';
+  }
+  function chords(){
+    const notes=scaleNotes(), qs=MODE_TRIADS[state.modeIndex];
+    return notes.map((root,i)=>({degree:i,root,quality:qs[i],name:pretty(root)+QUALITY[qs[i]].suffix,roman:romanFor(i,qs[i]),tones:[notes[i],notes[(i+2)%7],notes[(i+4)%7]]}));
+  }
+  function majorSignatureForRoot(root){
+    if(root==='C') return {type:'none',count:0};
+    const s=SHARPS.find(x=>x[0]===root); if(s) return {type:'sharp',count:s[1]};
+    const f=FLATS.find(x=>x[0]===root); if(f) return {type:'flat',count:f[1]};
+    return {type:'none',count:0};
+  }
+
+  function signatureMarkup(n){
+    return n.split(',').map(note=>`<span>${note}</span>`).join('');
+  }
+
+  function layoutSignatureRows(){
+    const wheel=$('.wheel-wrap');
+    if(!wheel) return;
+    const wr=wheel.getBoundingClientRect();
+    const cx=(wr.left+wr.right)/2;
+    const cy=(wr.top+wr.bottom)/2;
+    const radius=wr.width*(145/300);
+    const baseCircleGap=7;
+    const keyGap=12;
+
+    const edgeAtRow=(row, side)=>{
+      const rr=row.getBoundingClientRect();
+      const y=(rr.top+rr.bottom)/2;
+      const dy=y-cy;
+      const half=Math.abs(dy)<radius ? Math.sqrt(Math.max(0,radius*radius-dy*dy)) : 0;
+      return side==='left' ? cx-half : cx+half;
+    };
+
+    // First lay out the RIGHT side exactly as approved. This becomes the source
+    // of truth for the visible note-to-Circle gap on each corresponding row.
+    const rightRows=$$('#sharpList .sig-row');
+    rightRows.forEach((row,index)=>{
+      const notes=row.querySelector('.sig-notes');
+      const key=row.querySelector('.sig-key');
+      if(!notes || !key) return;
+      const rr=row.getBoundingClientRect();
+      const kr=key.getBoundingClientRect();
+      const rightEdge=edgeAtRow(row,'right');
+
+      notes.classList.add('signature-spread');
+      const start=rightEdge+baseCircleGap;
+      const keyVisualWidth=Math.max(kr.width,key.scrollWidth||0);
+      const keyLeftOverflow=Math.max(0,keyVisualWidth-kr.width);
+      // Fine adjustment requested by user: pull only the bottom-right sharp
+      // signature row farther LEFT so it visually matches the bottom-left row
+      // and clears the coloured F♯ key cleanly.
+      const rowKeyGap=keyGap + (index===rightRows.length-1 ? 34 : 0);
+      const end=kr.left-keyLeftOverflow-rowKeyGap;
+      notes.style.left=`${Math.max(0,start-rr.left)}px`;
+      notes.style.right='auto';
+      notes.style.width=`${Math.max(8,end-start)}px`;
+    });
+
+    // Force layout, then measure the ACTUAL visible right-side gaps (including
+    // the existing top-F fine adjustment) instead of guessing with a constant.
+    const mirroredGaps=rightRows.map(row=>{
+      const notes=row.querySelector('.sig-notes');
+      if(!notes) return baseCircleGap;
+      const rightEdge=edgeAtRow(row,'right');
+      const nr=notes.getBoundingClientRect();
+      return Math.max(baseCircleGap, nr.left-rightEdge);
+    });
+
+    // Use the ACTUAL larger letter-to-letter spacing of the bottom F♯ row as
+    // the spacing target for the bottom G♭ row.
+    const rightBottomNotes=rightRows[rightRows.length-1]?.querySelector('.sig-notes');
+    const rightBottomParts=rightBottomNotes ? [...rightBottomNotes.children] : [];
+    let rightBottomInterGap=0;
+    if(rightBottomParts.length>1){
+      const gaps=[];
+      for(let i=0;i<rightBottomParts.length-1;i++){
+        const a=rightBottomParts[i].getBoundingClientRect();
+        const b=rightBottomParts[i+1].getBoundingClientRect();
+        gaps.push(Math.max(0,b.left-a.right));
+      }
+      rightBottomInterGap=gaps.reduce((a,b)=>a+b,0)/gaps.length;
+    }
+
+    // Mirror the RIGHT-side visible Circle gap on the LEFT, row-for-row.
+    // Important: reserve enough REAL width for every flat-signature letter.
+    // If a row is tight, move the whole signature lane farther LEFT rather than
+    // allowing its last letters to spill underneath the Circle.
+    $$('#flatList .sig-row').forEach((row,index)=>{
+      const notes=row.querySelector('.sig-notes');
+      const key=row.querySelector('.sig-key');
+      if(!notes || !key) return;
+
+      notes.classList.add('signature-spread');
+      notes.style.fontSize='';
+
+      const rr=row.getBoundingClientRect();
+      const kr=key.getBoundingClientRect();
+      const leftEdge=edgeAtRow(row,'left');
+      const desiredGap=mirroredGaps[index] ?? baseCircleGap;
+      const end=leftEdge-desiredGap;
+
+      const keyVisualWidth=Math.max(kr.width,key.scrollWidth||0);
+      const keyRightOverflow=Math.max(0,keyVisualWidth-kr.width);
+      const hardStart=kr.right+keyRightOverflow+2;   // never cover the coloured key
+      const preferredStart=kr.right+keyRightOverflow+keyGap;
+
+      // Measure the actual rendered widths of B/E/A/D/G/C. Give multiple-note
+      // rows a small even minimum gap, then expand with space-between when room exists.
+      const parts=[...notes.children];
+
+      // Fine adjustment requested by user: on the A♭ row only, make B E A D
+      // slightly smaller, then use the full signature lane so the four letters
+      // are distributed evenly. The coloured A♭ key and Circle stay fixed.
+      if(index===3){
+        const current=parseFloat(getComputedStyle(notes).fontSize)||12;
+        notes.style.fontSize=`${(current*0.88).toFixed(2)}px`;
+      }
+
+      const letterWidth=parts.reduce((sum,el)=>sum+el.getBoundingClientRect().width,0);
+      const minInterGap=parts.length>1 ? 4 : 0;
+      let minWidth=letterWidth + Math.max(0,parts.length-1)*minInterGap;
+      let available=Math.max(0,end-hardStart);
+
+      // Preserve the chosen size for B E A, the intentionally smaller B E A D,
+      // and the normal-size B E A D G / B E A D G C rows. Never auto-shrink them.
+      const keepNormalSize = index===2 || index===3 || index===4 || index===5;
+      if(!keepNormalSize && minWidth>available && available>0){
+        const current=parseFloat(getComputedStyle(notes).fontSize)||12;
+        const scale=Math.max(.82,available/minWidth);
+        notes.style.fontSize=`${(current*scale).toFixed(2)}px`;
+        const resized=[...notes.children].reduce((sum,el)=>sum+el.getBoundingClientRect().width,0);
+        minWidth=resized + Math.max(0,parts.length-1)*2;
+      }
+
+      let start = keepNormalSize
+        ? Math.max(rr.left, Math.min(preferredStart,end-minWidth))
+        : Math.max(hardStart,Math.min(preferredStart,end-minWidth));
+
+      // A♭ row: use a clean full lane and let flex space-between distribute
+      // B E A D evenly from the key side to the existing Circle-side endpoint.
+      if(index===3){
+        start = Math.min(hardStart + 8, end - minWidth);
+      }
+
+      // G♭ bottom row: keep the Circle-side endpoint fixed, but extend the lane
+      // LEFT until B E A D G C has the same larger inter-letter spacing as the
+      // F♯ row's F C G D A E.
+      if(index===5 && rightBottomInterGap>0){
+        const targetWidth=letterWidth + rightBottomInterGap*Math.max(0,parts.length-1);
+        start=Math.max(hardStart,end-targetWidth);
+      }
+
+      const width=Math.max(1,end-start);
+      notes.style.left=`${start-rr.left}px`;
+      notes.style.right='auto';
+      notes.style.width=`${width}px`;
+    });
+
+    // User request: exact right-side signature spacing copied from the approved
+    // matching flat-side rows. Keep Circle-side positions and coloured keys fixed.
+    const leftRows=$$('#flatList .sig-row');
+
+    // D row (F C) mirrors B♭ row (B E).
+    // A/E/B rows below are the three remaining rows the user explicitly called out.
+    [1,2,3,4].forEach(index=>{
+      const leftNotes=leftRows[index]?.querySelector('.sig-notes');
+      const rightRow=rightRows[index];
+      const rightNotes=rightRow?.querySelector('.sig-notes');
+      const rightKey=rightRow?.querySelector('.sig-key');
+      if(!leftNotes || !rightNotes || !rightKey) return;
+
+      const leftParts=[...leftNotes.children];
+      const rightParts=[...rightNotes.children];
+      if(leftParts.length<2 || rightParts.length<2) return;
+
+      // Copy the ACTUAL visible inter-letter gap from the corresponding left row.
+      const gapSamples=[];
+      for(let i=0;i<leftParts.length-1;i++){
+        const a=leftParts[i].getBoundingClientRect();
+        const b=leftParts[i+1].getBoundingClientRect();
+        gapSamples.push(Math.max(0,b.left-a.right));
+      }
+      const targetGap=gapSamples.reduce((sum,v)=>sum+v,0)/gapSamples.length;
+
+      const rr=rightRow.getBoundingClientRect();
+      const kr=rightKey.getBoundingClientRect();
+      const rightEdge=edgeAtRow(rightRow,'right');
+      const start=rightEdge + (mirroredGaps[index] ?? baseCircleGap);
+      const keyVisualWidth=Math.max(kr.width,rightKey.scrollWidth||0);
+      const keyLeftOverflow=Math.max(0,keyVisualWidth-kr.width);
+      const maxEnd=kr.left-keyLeftOverflow-2;
+
+      // Use an explicit flex gap instead of space-between so F C G / F C G D /
+      // F C G D A retain the exact same letter-to-letter distance as B E A /
+      // B E A D / B E A D G, regardless of letter widths.
+      const lettersWidth=rightParts.reduce((sum,el)=>sum+el.getBoundingClientRect().width,0);
+      const exactWidth=lettersWidth + targetGap*(rightParts.length-1);
+      const width=Math.max(8, Math.min(exactWidth, maxEnd-start));
+
+      rightNotes.style.left=`${Math.max(0,start-rr.left)}px`;
+      rightNotes.style.right='auto';
+      rightNotes.style.width=`${width}px`;
+      rightNotes.style.justifyContent='flex-start';
+      rightNotes.style.columnGap=`${targetGap}px`;
+    });
+  }
+
+  function renderSideLists(){
+    const root=currentRoot();
+    // When an inner minor key is selected, its outer-ring relative major owns the same key signature.
+    const signatureRoot = state.wheelRing==='inner' ? CIRCLE_KEYS[state.keyIndex] : root;
+    $('#flatList').innerHTML=FLATS.map(([k,c,n])=>`<div class="sig-row ${k===signatureRoot?'active':''}"><span class="sig-key" style="color:${COLORS[(CIRCLE_KEYS.indexOf(k)+12)%12]}">${pretty(k)}</span><span class="sig-notes">${signatureMarkup(n)}</span></div>`).join('');
+    $('#sharpList').innerHTML=SHARPS.map(([k,c,n])=>`<div class="sig-row ${k===signatureRoot?'active':''}"><span class="sig-notes">${signatureMarkup(n)}</span><span class="sig-key" style="color:${COLORS[(CIRCLE_KEYS.indexOf(k)+12)%12]}">${pretty(k)}</span></div>`).join('');
+    const s=majorSignatureForRoot(signatureRoot);
+    $('#leftHeaderRoot').textContent=pretty(root); $('#rightHeaderRoot').textContent=pretty(root);
+    $('#leftHeaderSig').textContent=s.type==='flat'?`${s.count}♭`:'0♭ —';
+    $('#rightHeaderSig').textContent=s.type==='sharp'?`${s.count}♯`:'— 0♯';
+    requestAnimationFrame(layoutSignatureRows);
+  }
+
+  function polar(cx,cy,r,ang){const a=(ang-90)*Math.PI/180;return{x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)}}
+  function ringPath(cx,cy,r1,r2,a0,a1){
+    const p1=polar(cx,cy,r2,a0),p2=polar(cx,cy,r2,a1),p3=polar(cx,cy,r1,a1),p4=polar(cx,cy,r1,a0); const large=(a1-a0)>180?1:0;
+    return `M ${p1.x} ${p1.y} A ${r2} ${r2} 0 ${large} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${r1} ${r1} 0 ${large} 0 ${p4.x} ${p4.y} Z`;
+  }
+  function textPos(r,ang){return polar(150,150,r,ang)}
+  function renderWheel(){
+    const svg=$('#wheel');
+    let html=`<defs><radialGradient id="centerGrad"><stop offset="0" stop-color="#181a1f"/><stop offset="1" stop-color="#0d0f13"/></radialGradient></defs>`;
+    let activeOutline='';
+    CIRCLE_KEYS.forEach((k,i)=>{
+      const ang=i*30; const a0=ang-15,a1=ang+15; const color=COLORS[i];
+      const outerPath=ringPath(150,150,82,145,a0,a1);
+      const outerActive=state.wheelRing==='outer' && i===state.keyIndex;
+      html+=`<path class="wedge ${outerActive?'active':''}" data-key-index="${i}" d="${outerPath}" fill="${color}" fill-opacity=".31"${outerActive?` style="--active-color:${color}"`:''}/>`;
+      if(outerActive) activeOutline=`<path class="wheel-active-outline" d="${outerPath}" style="--active-color:${color}"/>`;
+      const p=textPos(114,ang);
+      if(k==='F#'){
+        html+=`<text class="wheel-label" x="${p.x}" y="${p.y-3}" fill="${color}">F♯</text>`;
+        html+=`<text class="wheel-label enharmonic-sub" x="${p.x}" y="${p.y+9}" fill="${color}">G♭</text>`;
+      }else{
+        html+=`<text class="wheel-label" x="${p.x}" y="${p.y}" fill="${color}">${pretty(k)}</text>`;
+      }
+      const rel=REL_MINOR[k] || ''; const p2=textPos(68,ang);
+      const innerPath=ringPath(150,150,44,82,a0,a1);
+      const innerActive=state.wheelRing==='inner' && i===state.keyIndex;
+      html+=`<path class="inner-wedge ${innerActive?'active':''}" data-minor-index="${i}" d="${innerPath}" fill="${color}" fill-opacity=".22"${innerActive?` style="--active-color:${color}"`:''}/>`;
+      if(innerActive) activeOutline=`<path class="wheel-active-outline" d="${innerPath}" style="--active-color:${color}"/>`;
+      html+=`<text class="wheel-label minor" x="${p2.x}" y="${p2.y}" fill="${color}">${pretty(rel)}m</text>`;
+    });
+    html+=`<circle class="center-ring" cx="150" cy="150" r="38"/><text class="center-key" x="150" y="151">${pretty(currentRoot())}${state.wheelRing==='inner' && state.modeIndex===5?'m':''}</text>`;
+    html+=activeOutline;
+    svg.innerHTML=html;
+    svg.querySelectorAll('[data-key-index]').forEach(el=>el.addEventListener('click',()=>{
+      state.keyIndex=+el.dataset.keyIndex;
+      state.root=CIRCLE_KEYS[state.keyIndex];
+      state.wheelRing='outer';
+      state.chordDegree=0;state.triadDegree=0;
+      renderAll();
+    }));
+    svg.querySelectorAll('[data-minor-index]').forEach(el=>el.addEventListener('click',()=>{
+      state.keyIndex=+el.dataset.minorIndex;
+      state.root=REL_MINOR[CIRCLE_KEYS[state.keyIndex]];
+      state.wheelRing='inner';
+      state.modeIndex=5; // natural minor / Aeolian
+      state.chordDegree=0;state.triadDegree=0;
+      renderAll();
+    }));
+  }
+
+  function renderKeyPanel(){
+    const root=currentRoot(), mode=currentMode(), notes=scaleNotes(), acc=countAccidentals(notes), cs=chords();
+    $('#keyName').textContent=`${pretty(root)} ${mode.name==='Aeolian'?'Minor':mode.name==='Ionian'?'Major':mode.name}`;
+    $('#relativeMinor').textContent = state.modeIndex===0 ? `Relative minor · ${pretty(REL_MINOR[root])} minor` : `${mode.desc}`;
+    $('#modeName').textContent=mode.name; $('#modeSubtitle').textContent=mode.desc;
+    $('#scaleNotes').textContent=notes.map(pretty).join('  '); $('#scaleFormula').textContent=mode.degrees.join('  ');
+    const total=acc.sharps+acc.flats; $('#signatureCount').textContent= total===0?'0 accidentals':`${total} ${acc.sharps?'sharp'+(total>1?'s':''):'flat'+(total>1?'s':'')}`;
+    $('#signatureNotes').textContent= total===0?'No sharps or flats':acc.items.join(', ');
+    $('#keyChordGrid').innerHTML=cs.map(c=>`<div class="chord-cell"><div class="roman">${c.roman}</div><div class="chord-name">${c.name}</div></div>`).join('');
+  }
+  function renderModePanel(){
+    const m=currentMode(); $('#modeHero').textContent=m.name; $('#modeHeroDesc').textContent=m.desc; $('#modeHeroIndex').textContent=m.roman;
+    $('#modeList').innerHTML=MODES.map((x,i)=>`<button class="mode-row ${i===state.modeIndex?'active':''}" data-mode="${i}"><span class="mode-name">${x.name}</span><span class="mode-formula">${x.degrees.join(' · ')}</span><span class="mode-index">${x.roman}</span></button>`).join('');
+    $$('#modeList [data-mode]').forEach(b=>b.onclick=()=>{state.modeIndex=+b.dataset.mode;state.chordDegree=0;state.triadDegree=0;renderAll()});
+  }
+  function renderChordPanel(){
+    const cs=chords(), c=cs[state.chordDegree];
+    $('#chordBrowser').innerHTML=cs.map((x,i)=>`<button class="chord-cell ${i===state.chordDegree?'selected':''}" data-degree="${i}" style="background:none;color:inherit;border-top:0;border-bottom:0;border-left:0"><div class="roman">${x.roman}</div><div class="chord-name">${x.name}</div></button>`).join('');
+    $$('#chordBrowser [data-degree]').forEach(b=>b.onclick=()=>{state.chordDegree=+b.dataset.degree;renderChordPanel()});
+    $('#selectedChord').textContent=c.name; $('#selectedRoman').textContent=`${c.roman} · ${QUALITY[c.quality].label}`;
+    $('#selectedTones').textContent=c.tones.map(pretty).join('  '); $('#selectedFormula').textContent=QUALITY[c.quality].formula;
+    $('#chordDetail').innerHTML=`<div class="th">Role</div><div class="th">Note</div><div class="th">Scale degree</div><div class="th">Chord interval</div>`+
+      c.tones.map((n,i)=>`<div class="strong">${['Root','3rd','5th'][i]}</div><div>${pretty(n)}</div><div>${((state.chordDegree+i*2)%7)+1}</div><div>${QUALITY[c.quality].formula.split(' · ')[i]}</div>`).join('');
+  }
+  function renderTriadPanel(){
+    const cs=chords(),c=cs[state.triadDegree];
+    $('#triadDegreePills').innerHTML=cs.map((x,i)=>`<button class="pill ${i===state.triadDegree?'active':''}" data-triad-degree="${i}">${x.roman} · ${x.name}</button>`).join('');
+    $$('#triadDegreePills [data-triad-degree]').forEach(b=>b.onclick=()=>{state.triadDegree=+b.dataset.triadDegree;renderTriadPanel()});
+    $('#triadRoot').textContent=pretty(c.root); $('#triadQuality').textContent=`${QUALITY[c.quality].label} triad`;
+    $('#triad35').textContent=`${pretty(c.tones[1])} · ${pretty(c.tones[2])}`; $('#triadAllTones').textContent=c.tones.map(pretty).join(' · ');
+  }
+  function renderScalePanel(){
+    const notes=scaleNotes(),m=currentMode(); $('#scaleHero').textContent=`${pretty(currentRoot())} ${m.name}`; $('#scaleHeroNotes').textContent=notes.map(pretty).join('  ');
+    const intervalNames=['Unison','2nd','3rd','4th','5th','6th','7th'];
+    $('#scaleTable').innerHTML=`<div class="th">Deg</div><div class="th">Note</div><div class="th">Formula</div><div class="th">Role</div>`+notes.map((n,i)=>`<div class="strong">${i+1}</div><div>${pretty(n)}</div><div>${m.degrees[i]}</div><div>${intervalNames[i]}</div>`).join('');
+  }
+  function shapePositions(){
+    const rootPc=ROOT_PC[currentRoot()] ?? parseRoot(currentRoot()).pc;
+    return SHAPE_ORDER.map(s=>({shape:s,fret:(rootPc-OPEN_FORM_PC[s]+12)%12})).sort((a,b)=>a.fret-b.fret);
+  }
+  function renderCagedPanel(){
+    const pos=shapePositions(); $('#cagedHero').textContent=`${pretty(currentRoot())} · shape positions`;
+    $('#cagedGrid').innerHTML=pos.map(x=>`<button class="caged-card ${x.shape===state.cagedShape?'current':''}" data-shape="${x.shape}"><div class="caged-letter">${x.shape}</div><div class="caged-fret">fret ${x.fret}</div></button>`).join('');
+    $$('#cagedGrid [data-shape]').forEach(b=>b.onclick=()=>{state.cagedShape=b.dataset.shape;renderCagedPanel()});
+    const rootPc=ROOT_PC[currentRoot()] ?? 0;
+    $('#fretStrip').innerHTML=Array.from({length:13},(_,f)=>{
+      const hit=pos.find(x=>x.fret===f); const root=(f===rootPc); return `<div class="fret ${hit&&hit.shape===state.cagedShape?'root':''}"><span>${f}</span>${hit?`<span class="note">${hit.shape}</span>`:''}</div>`
+    }).join('');
+  }
+  function renderAll(){renderSideLists();renderWheel();renderKeyPanel();renderModePanel();renderChordPanel();renderTriadPanel();renderScalePanel();renderCagedPanel()}
+  function cycleKey(delta){state.keyIndex=(state.keyIndex+delta+CIRCLE_KEYS.length)%CIRCLE_KEYS.length;state.root=state.wheelRing==='inner'?REL_MINOR[CIRCLE_KEYS[state.keyIndex]]:CIRCLE_KEYS[state.keyIndex];state.chordDegree=0;state.triadDegree=0;renderAll()}
+  function cycleMode(delta){state.modeIndex=(state.modeIndex+delta+MODES.length)%MODES.length;state.chordDegree=0;state.triadDegree=0;renderAll()}
+  $$('[data-action]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.action==='key-prev')cycleKey(-1);if(b.dataset.action==='key-next')cycleKey(1);if(b.dataset.action==='mode-prev')cycleMode(-1);if(b.dataset.action==='mode-next')cycleMode(1)}));
+  $$('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    $$('.nav-btn').forEach(x=>x.classList.toggle('active',x===btn));
+    $$('.tab-panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===btn.dataset.tab));
+  }));
+  document.addEventListener('contextmenu',e=>e.preventDefault());
+  document.addEventListener('gesturestart',e=>e.preventDefault());
+  window.addEventListener('resize',()=>requestAnimationFrame(layoutSignatureRows));
+  // Edge/Safari can settle the visual viewport after first paint. Re-run the
+  // signature geometry when the panel or fonts finish sizing so positions never
+  // remain based on a stale Circle width.
+  if(window.ResizeObserver){
+    const cofResizeObserver=new ResizeObserver(()=>requestAnimationFrame(layoutSignatureRows));
+    const panel=$('#cofPanel');
+    if(panel) cofResizeObserver.observe(panel);
+  }
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(()=>requestAnimationFrame(layoutSignatureRows));
+  }
+  setTimeout(layoutSignatureRows,80);
+  setTimeout(layoutSignatureRows,250);
+  renderAll();
+})();
+</script>
+</body>
+</html>
