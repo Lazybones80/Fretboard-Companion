@@ -4768,39 +4768,7 @@ html body #mainScroll #keyChordDetail > .triads-even-interval-row > .triads-even
 </style>
 
 
-<style id="screen2-string-thickness-clean-fix-20260921">
-/* String-thickness fix only. Do not change fretboard geometry, spacing, or note sizes.
-   Remove the heavy shadow stack that was visually fattening the lower strings, then
-   re-apply a gradual thickness increase from high e to low E. */
-#cofPanel .fretboard-view-string,
-.diatonic-fretboard-card .fretboard-view-string,
-.fretboard-view-string{
-  border-radius:999px !important;
-  box-shadow:none !important;
-  filter:none !important;
-  opacity:.9 !important;
-  background:linear-gradient(180deg,#c0c2c0 0%,#8a8e95 46%,#4d5158 100%) !important;
-}
 
-#cofPanel .fretboard-view-string:nth-child(1),
-.diatonic-fretboard-card .fretboard-view-string:nth-child(1),
-.fretboard-view-string:nth-child(1){height:0.50px !important; min-height:0.50px !important;}
-#cofPanel .fretboard-view-string:nth-child(2),
-.diatonic-fretboard-card .fretboard-view-string:nth-child(2),
-.fretboard-view-string:nth-child(2){height:0.80px !important; min-height:0.80px !important;}
-#cofPanel .fretboard-view-string:nth-child(3),
-.diatonic-fretboard-card .fretboard-view-string:nth-child(3),
-.fretboard-view-string:nth-child(3){height:0.92px !important; min-height:0.92px !important;}
-#cofPanel .fretboard-view-string:nth-child(4),
-.diatonic-fretboard-card .fretboard-view-string:nth-child(4),
-.fretboard-view-string:nth-child(4){height:1.02px !important; min-height:1.02px !important;}
-#cofPanel .fretboard-view-string:nth-child(5),
-.diatonic-fretboard-card .fretboard-view-string:nth-child(5),
-.fretboard-view-string:nth-child(5){height:1.00px !important; min-height:1.00px !important;}
-#cofPanel .fretboard-view-string:nth-child(6),
-.diatonic-fretboard-card .fretboard-view-string:nth-child(6),
-.fretboard-view-string:nth-child(6){height:1.52px !important; min-height:1.52px !important;}
-</style>
 
 <style id="cof-fretboard-exact-interval-size-20260921">
 /* COF FRETBOARD — exact physical neck geometry used by the approved Interval fretboard.
@@ -13442,20 +13410,30 @@ body.reference-panels-paired #intervalDrawer #scaleTable{grid-template-rows:minm
   background:linear-gradient(180deg,#b7b8b6,#565a60);
   box-shadow:0 1px 0 rgba(0,0,0,.65); opacity:.84;
 }
-/* Standard guitar-string visual order: high e at the top is thinnest,
-   then each string grows progressively thicker down to the low E.
-   Keep the wound D/A/E strings restrained so each step stays visibly gradual. */
-/* High-e stays at one full CSS pixel so it remains reliable on iOS/Edge. */
-.fretboard-view-string:nth-child(1){
-  height:1px !important;
-  min-height:1px !important;
-  opacity:.84 !important;
+/* One six-gauge progression for every neck, high e through low E.
+   CAGED strings share a parent with frets and markers, so count strings only. */
+.fretboard-view-string,.interval-neck-string,.caged-mini-board .mini-string-line{
+  height:var(--guitar-string-width) !important;
+  min-height:var(--guitar-string-width) !important;
+  transform:translateY(-50%);
+  border-radius:999px;
+  box-shadow:none !important;
+  filter:none !important;
+  opacity:.9 !important;
+  background:linear-gradient(180deg,#c0c2c0 0%,#8a8e95 46%,#4d5158 100%) !important;
 }
-.fretboard-view-string:nth-child(2){height:1.10px;}
-.fretboard-view-string:nth-child(3){height:1.20px;}
-.fretboard-view-string:nth-child(4){height:1.35px;}
-.fretboard-view-string:nth-child(5){height:1.55px;}
-.fretboard-view-string:nth-child(6){height:1.80px;}
+:is(.fretboard-view-string,.interval-neck-string):nth-child(1),
+.caged-mini-board > :nth-child(1 of .mini-string-line){--guitar-string-width:1px;}
+:is(.fretboard-view-string,.interval-neck-string):nth-child(2),
+.caged-mini-board > :nth-child(2 of .mini-string-line){--guitar-string-width:1.35px;}
+:is(.fretboard-view-string,.interval-neck-string):nth-child(3),
+.caged-mini-board > :nth-child(3 of .mini-string-line){--guitar-string-width:1.7px;}
+:is(.fretboard-view-string,.interval-neck-string):nth-child(4),
+.caged-mini-board > :nth-child(4 of .mini-string-line){--guitar-string-width:2.05px;}
+:is(.fretboard-view-string,.interval-neck-string):nth-child(5),
+.caged-mini-board > :nth-child(5 of .mini-string-line){--guitar-string-width:2.4px;}
+:is(.fretboard-view-string,.interval-neck-string):nth-child(6),
+.caged-mini-board > :nth-child(6 of .mini-string-line){--guitar-string-width:2.75px;}
 .fretboard-view-inlay{
   position:absolute; width:7px; height:7px; border-radius:50%; transform:translate(-50%,-50%);
   background:#62666d; opacity:.43; box-shadow:inset 0 1px 1px rgba(255,255,255,.18);
@@ -13733,11 +13711,11 @@ html body .app > .nav{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
       <div class="fretboard-view-switch-wrap fretboard-label-cycle-wrap">
         <span class="fretboard-view-icon-label" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/></svg></span><span class="fretboard-view-mode-badge" id="fretboardNotesModeLabel" aria-hidden="true">OFF</span><button type="button" class="fretboard-view-toggle" id="fretboardNotesToggle" aria-label="Cycle fretboard labels" aria-pressed="false" data-mode="degree"></button>
       </div>
-      <div class="fretboard-view-switch-wrap fretboard-chromatic-wrap">
-        <span class="fretboard-view-icon-label fretboard-view-text-icon" aria-hidden="true">CHR</span><span class="fretboard-view-mode-badge" id="fretboardChromaticModeLabel" aria-hidden="true">OFF</span><button type="button" class="fretboard-view-toggle" id="fretboardChromaticToggle" aria-label="Toggle chromatic notes on fretboard" aria-pressed="false"></button>
-      </div>
       <div class="fretboard-view-switch-wrap fretboard-lines-wrap">
         <button type="button" class="fretboard-lines-button" id="fretboardTriadLinesToggle" aria-label="Toggle triad shape lines" aria-pressed="false">LINES</button>
+      </div>
+      <div class="fretboard-view-switch-wrap fretboard-chromatic-wrap">
+        <span class="fretboard-view-icon-label fretboard-view-text-icon" aria-hidden="true">CHR</span><span class="fretboard-view-mode-badge" id="fretboardChromaticModeLabel" aria-hidden="true">OFF</span><button type="button" class="fretboard-view-toggle" id="fretboardChromaticToggle" aria-label="Toggle chromatic notes on fretboard" aria-pressed="false"></button>
       </div>
       <div class="fretboard-view-tuning" aria-label="Standard tuning E A D G B E"><strong>Standard Tuning</strong><span>E A D G B E</span></div>
     </div>`;
@@ -13782,11 +13760,9 @@ html body .app > .nav{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
 
   function activeRootPc(){
     const label=(document.getElementById('keyName')?.textContent||'C').trim();
-    const match=label.match(/[A-G](?:[#♯b♭])?/);
+    const match=label.match(/[A-G][#♯b♭𝄪𝄫]*/u);
     if(!match)return 0;
-    const raw=match[0].replace('♯','#').replace('♭','b');
-    const map={C:0,'C#':1,Db:1,D:2,'D#':3,Eb:3,E:4,F:5,'F#':6,Gb:6,G:7,'G#':8,Ab:8,A:9,'A#':10,Bb:10,B:11};
-    return map[raw]??0;
+    return notePcFromLabel(match[0])??0;
   }
   function preferFlats(){
     const label=(document.getElementById('keyName')?.textContent||'').replace('♭','b');
@@ -13797,9 +13773,12 @@ html body .app > .nav{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
     return MODE_INTERVALS[mode]||MODE_INTERVALS.Ionian;
   }
   function notePcFromLabel(label){
-    const raw=String(label||'').replaceAll('♯','#').replaceAll('♭','b');
-    const map={C:0,'C#':1,Db:1,D:2,'D#':3,Eb:3,E:4,F:5,'F#':6,Gb:6,G:7,'G#':8,Ab:8,A:9,'A#':10,Bb:10,B:11};
-    return map[raw] ?? 0;
+    const raw=String(label||'').replaceAll('♯','#').replaceAll('♭','b').replaceAll('𝄪','##').replaceAll('𝄫','bb');
+    const match=raw.match(/^([A-G])([#b]*)$/);
+    if(!match) return null;
+    const natural={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[match[1]];
+    const offset=[...match[2]].reduce((sum,acc)=>sum+(acc==='#'?1:-1),0);
+    return ((natural+offset)%12+12)%12;
   }
   function noteColorForLabel(label){
     return COLORS[notePcFromLabel(label)] || '#8b93a0';
@@ -13875,16 +13854,13 @@ html body .app > .nav{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
        only fills the otherwise-empty non-scale locations; it must never suppress
        chord/triad active markers or their altered spellings. */
     const triadHighlightActive=triadActive;
-    const pitchMap={C:0,'C#':1,Db:1,D:2,'D#':3,Eb:3,E:4,F:5,'F#':6,Gb:6,G:7,'G#':8,Ab:8,A:9,'A#':10,Bb:10,B:11};
-    const normalize=n=>(n||'').replaceAll('♯','#').replaceAll('♭','b');
     const triadLabelByPc=new Map();
     (harmony.tones||[]).forEach(note=>{
-      const raw=normalize(note);
-      const pc=pitchMap[raw];
+      const pc=notePcFromLabel(note);
       if(pc!=null) triadLabelByPc.set(pc,(note||'').replaceAll('#','♯').replaceAll('b','♭'));
     });
     const triadPcs=new Set(triadLabelByPc.keys());
-    const activeHarmonyRootPc=triadActive && harmony.root ? pitchMap[normalize(harmony.root)] : null;
+    const activeHarmonyRootPc=triadActive && harmony.root ? notePcFromLabel(harmony.root) : null;
     const keyRootPc=root;
     const cells=[];
     for(let s=0;s<6;s++){
@@ -13906,7 +13882,9 @@ html body .app > .nav{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
         const isRootSquare=(inScale && pc===keyRootPc) || (activeHarmonyRootPc!=null && isTriadTone && pc===activeHarmonyRootPc);
         const noteClass=(isTriadTone?' fretboard-triad-tone':isChromaticExtra?' fretboard-chromatic-extra':outline?' fretboard-nontriad-tone':'') + (isRootSquare?' fretboard-root-tone':'');
         const noteLabel=isTriadTone && triadLabelByPc.has(pc) ? triadLabelByPc.get(pc) : names[pc];
-        const degree=fretboardDegreeLabel(noteLabel,pc,root,scaleIntervals,inScale);
+        // Altered triads keep their written degree even when an enharmonic pitch
+        // is in the scale: G-double-sharp in E major is sharp 3, not degree 4.
+        const degree=fretboardDegreeLabel(noteLabel,pc,root,scaleIntervals,inScale && !isTriadTone);
         cells.push(`<span class="fretboard-view-note${noteClass}" data-note-pc="${pc}" data-string="${s}" data-fret="${f}" data-scale-degree="${degree}" data-note-label="${noteLabel}" data-chromatic-extra="${isChromaticExtra?'1':'0'}" style="left:${x};top:${y}%;--fretboard-note-color:${COLORS[pc]};background:${COLORS[pc]}"><span>${noteLabel}</span><small>${iv}</small></span>`);
       }
     }
@@ -14425,13 +14403,7 @@ html body .app > .nav{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
 
 <style id="fretboard-string-icon-shadows-20260919">
 /* Add depth to the main fretboard without changing its layout or marker sizing. */
-#cofPanel .fretboard-view-string{
-  box-shadow:
-    0 1px 1px rgba(0,0,0,.88),
-    0 2px 3px rgba(0,0,0,.42),
-    0 -1px 1px rgba(255,255,255,.07) !important;
-  filter:drop-shadow(0 1px 1px rgba(0,0,0,.38));
-}
+
 
 #cofPanel .fretboard-view-note:not(.fretboard-chromatic-extra){
   box-shadow:
@@ -15162,8 +15134,6 @@ html body .app > .nav{grid-template-columns:repeat(5,minmax(0,1fr)) !important;}
 .interval-neck-frets,.interval-neck-strings,.interval-neck-inlays,.interval-neck-markers{position:absolute;inset:0;pointer-events:none;}
 .interval-neck-fret{position:absolute;top:0;bottom:0;width:1px;background:linear-gradient(90deg,#2e3239,#696e75 48%,#2b2f35);opacity:.72;}
 .interval-neck-string{position:absolute;left:0;right:0;height:1px;transform:translateY(-50%);background:linear-gradient(180deg,#aeb0af,#4f545a);box-shadow:0 1px 0 rgba(0,0,0,.65);opacity:.82;}
-.interval-neck-string:nth-child(1){height:1px !important;}
-.interval-neck-string:nth-child(2){height:.8px;}.interval-neck-string:nth-child(3){height:1.05px;}.interval-neck-string:nth-child(4){height:1.4px;}.interval-neck-string:nth-child(5){height:1.75px;}.interval-neck-string:nth-child(6){height:2.35px;}
 .interval-neck-inlay{position:absolute;width:6px;height:6px;border-radius:50%;transform:translate(-50%,-50%);background:#5d626a;opacity:.35;box-shadow:inset 0 1px 1px rgba(255,255,255,.16);}
 .interval-neck-marker{
   position:absolute;transform:translate(-50%,-50%);z-index:8;
@@ -16525,11 +16495,12 @@ html body .app > .nav{grid-template-columns:repeat(5,minmax(0,1fr)) !important;}
 
 
 <style id="harmony-chord-fretboard-icons-minus-1px-final-20260921">
-/* Harmony chord fretboards only.
-   Reduce every visible note-marker body by exactly 1px from its current size.
-   Do not change label/font size, fretboard geometry, strings, or chromatic text-only labels. */
+/* Share marker dimensions between the top scale board and Harmony chord boards.
+   Preserve label typography, fretboard geometry, and chromatic text-only labels. */
 
-/* Normal filled chord tones and square roots are currently 14px -> 13px. */
+/* Filled scale/chord tones and square roots. */
+.app.ui-screen-2 #mainScroll #cofPanel .fretboard-view-note:not(.fretboard-nontriad-tone):not(.fretboard-chromatic-extra),
+.app.ui-screen-2 #mainScroll #cofPanel .fretboard-view-note.fretboard-root-tone:not(.fretboard-chromatic-extra),
 .app.ui-screen-2 #mainScroll .diatonic-fretboard-card
 .fretboard-view-note.fretboard-triad-tone:not(.fretboard-chromatic-extra),
 .app.ui-screen-2 #mainScroll .diatonic-fretboard-card
@@ -16539,7 +16510,8 @@ html body .app > .nav{grid-template-columns:repeat(5,minmax(0,1fr)) !important;}
   height:13px !important;
 }
 
-/* Outlined/non-chord circular scale tones are currently 16px -> 15px. */
+/* Outlined/non-chord circular scale tones. */
+.app.ui-screen-2 #mainScroll #cofPanel .fretboard-view-note.fretboard-nontriad-tone:not(.fretboard-root-tone):not(.fretboard-chromatic-extra),
 .app.ui-screen-2 #mainScroll .diatonic-fretboard-card
 .fretboard-view-note.fretboard-nontriad-tone:not(.fretboard-root-tone):not(.fretboard-chromatic-extra){
   width:15px !important;
@@ -17444,10 +17416,7 @@ html body .app.ui-screen-2 #mainScroll .tab-panel.active[data-panel="chords"]{
 .diatonic-fretboard-board .fretboard-view-neck{
   max-height:none;
 }
-.diatonic-fretboard-card .fretboard-view-string{
-  box-shadow:0 1px 1px rgba(0,0,0,.88),0 2px 3px rgba(0,0,0,.42),0 -1px 1px rgba(255,255,255,.07) !important;
-  filter:drop-shadow(0 1px 1px rgba(0,0,0,.38));
-}
+
 .diatonic-fretboard-card .fretboard-view-note:not(.fretboard-chromatic-extra){
   box-shadow:0 2px 5px rgba(0,0,0,.82),0 1px 2px rgba(0,0,0,.68),inset 0 1px 0 rgba(255,255,255,.22) !important;
   filter:drop-shadow(0 1px 1px rgba(0,0,0,.32));
@@ -18494,6 +18463,9 @@ html body .app.ui-screen-2 #mainScroll .tab-panel.active[data-panel="chords"]{
   overscroll-behavior:none !important;
   touch-action:none !important;
 }
+.app.ui-screen-2 #mainScroll > .content,
+.app.ui-screen-2 .tab-panel[data-panel="chords"],
+.app.ui-screen-2 .diatonic-fretboard-stack *,
 .app.ui-screen-2 .diatonic-fretboard-stack,
 .app.ui-screen-2 .diatonic-fretboard-card,
 .app.ui-screen-2 .diatonic-fretboard-header,
@@ -18504,6 +18476,7 @@ html body .app.ui-screen-2 #mainScroll .tab-panel.active[data-panel="chords"]{
 .app.ui-screen-2 .diatonic-fretboard-card{
   transform:translateY(0);
 }
+.app.ui-screen-2.screen2-card-reordering .diatonic-fretboard-stack *,
 .app.ui-screen-2.screen2-card-reordering .diatonic-fretboard-stack,
 .app.ui-screen-2.screen2-card-reordering .diatonic-fretboard-card,
 .app.ui-screen-2.screen2-card-reordering .diatonic-fretboard-header,
@@ -18971,7 +18944,7 @@ html body .app.ui-screen-2 #mainScroll .tab-panel.active[data-panel="chords"]{
 
 /* Add a fifth control without changing the control-bar height. */
 .fretboard-view-controls{
-  grid-template-columns:.82fr .86fr .88fr .62fr 1.02fr !important;
+  grid-template-columns:.82fr .86fr .62fr .88fr 1.02fr !important;
 }
 .fretboard-lines-wrap{
   padding:0 3px !important;
@@ -19024,7 +18997,7 @@ html body .app.ui-screen-2 #mainScroll .tab-panel.active[data-panel="chords"]{
 }
 @media(max-width:390px){
   .fretboard-view-controls{
-    grid-template-columns:.78fr .84fr .86fr .58fr .94fr !important;
+    grid-template-columns:.78fr .84fr .58fr .86fr .94fr !important;
   }
   .fretboard-lines-button{
     height:25px !important;
@@ -19815,18 +19788,18 @@ html body .app.ui-screen-2 #mainScroll .tab-panel.active[data-panel="chords"]{
   line-height:1.18 !important;
 }
 
-/* Practice box takes the remaining height, like SHAPES / QUIZ lower content. */
+/* Match Memorize It container and cell geometry at each viewport width. */
 #mainScroll .tab-panel.active[data-panel="intervals"] .interval-trainer-view.active[data-interval-view-panel="map"] > .interval-practice-card{
   height:auto !important;
   min-height:0 !important;
   max-height:none !important;
-  padding:10px !important;
-  border-radius:13px !important;
-  grid-template-rows:34px minmax(0,1fr) !important;
-  gap:8px !important;
+  padding:7px !important;
+  border-radius:11px !important;
+  grid-template-rows:25px minmax(0,1fr) !important;
+  gap:5px !important;
 }
 #mainScroll .tab-panel.active[data-panel="intervals"] .interval-practice-head{
-  padding:0 3px 7px !important;
+  padding:0 2px !important;
 }
 #mainScroll .tab-panel.active[data-panel="intervals"] .interval-practice-head span{
   font-size:9.5px !important;
@@ -19836,11 +19809,11 @@ html body .app.ui-screen-2 #mainScroll .tab-panel.active[data-panel="chords"]{
   font-size:14px !important;
 }
 #mainScroll .tab-panel.active[data-panel="intervals"] .interval-practice-grid{
-  gap:8px !important;
+  gap:5px !important;
 }
 #mainScroll .tab-panel.active[data-panel="intervals"] .interval-practice-grid > div{
-  padding:10px 11px !important;
-  border-radius:11px !important;
+  padding:6px 7px !important;
+  border-radius:9px !important;
 }
 #mainScroll .tab-panel.active[data-panel="intervals"] .interval-practice-grid span{
   font-size:9px !important;
@@ -19882,14 +19855,14 @@ html body .app.ui-screen-2 #mainScroll .tab-panel.active[data-panel="chords"]{
   #mainScroll .tab-panel.active[data-panel="intervals"] .interval-map-memory strong{font-size:11.5px !important;}
 
   #mainScroll .tab-panel.active[data-panel="intervals"] .interval-trainer-view.active[data-interval-view-panel="map"] > .interval-practice-card{
-    padding:8px !important;
-    grid-template-rows:30px minmax(0,1fr) !important;
-    gap:7px !important;
+    padding:6px !important;
+    grid-template-rows:23px minmax(0,1fr) !important;
+    gap:5px !important;
   }
   #mainScroll .tab-panel.active[data-panel="intervals"] .interval-practice-head span{font-size:8.5px !important;}
   #mainScroll .tab-panel.active[data-panel="intervals"] .interval-practice-head strong{font-size:12.5px !important;}
-  #mainScroll .tab-panel.active[data-panel="intervals"] .interval-practice-grid{gap:7px !important;}
-  #mainScroll .tab-panel.active[data-panel="intervals"] .interval-practice-grid > div{padding:8px 9px !important;}
+  #mainScroll .tab-panel.active[data-panel="intervals"] .interval-practice-grid{gap:4px !important;}
+  #mainScroll .tab-panel.active[data-panel="intervals"] .interval-practice-grid > div{padding:5px 6px !important;}
   #mainScroll .tab-panel.active[data-panel="intervals"] .interval-practice-grid span{font-size:8px !important;margin-bottom:5px !important;}
   #mainScroll .tab-panel.active[data-panel="intervals"] .interval-practice-grid strong{font-size:11.5px !important;}
 }
@@ -21351,9 +21324,9 @@ body:has(#fretboardNotesToggle[aria-pressed="true"][data-mode="degree"]) #cofPan
   background:var(--marker-fill,#19b6a2) !important;
   color:var(--marker-text,#0b0c0e) !important;
   -webkit-text-fill-color:var(--marker-text,#0b0c0e) !important;
-  font-size:9.25px !important;
+  font-size:11.25px !important;
   line-height:1 !important;
-  font-weight:700 !important;
+  font-weight:900 !important;
   letter-spacing:-.03px !important;
   text-shadow:none !important;
   box-shadow:0 1px 4px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.22) !important;
@@ -21377,7 +21350,7 @@ body:has(#fretboardNotesToggle[aria-pressed="true"][data-mode="degree"]) #cofPan
   #mainScroll .tab-panel.active[data-panel="degrees"] .interval-neck-marker{
     min-width:17px !important;
     height:17px !important;
-    font-size:8.7px !important;
+    font-size:10.7px !important;
   }
   #mainScroll .tab-panel.active[data-panel="intervals"] .interval-neck-marker.is-root,
   #mainScroll .tab-panel.active[data-panel="degrees"] .interval-neck-marker.is-root{
@@ -21451,9 +21424,9 @@ body:has(#fretboardNotesToggle[aria-pressed="true"][data-mode="degree"]) #cofPan
   background:var(--marker-fill,#19b6a2) !important;
   color:var(--marker-text,#0b0c0e) !important;
   -webkit-text-fill-color:var(--marker-text,#0b0c0e) !important;
-  font-size:9.25px !important;
+  font-size:11.25px !important;
   line-height:1 !important;
-  font-weight:700 !important;
+  font-weight:900 !important;
   letter-spacing:-.03px !important;
   text-shadow:none !important;
   box-shadow:0 1px 4px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.22) !important;
@@ -21507,7 +21480,7 @@ body:has(#fretboardNotesToggle[aria-pressed="true"][data-mode="degree"]) #cofPan
   #mainScroll .tab-panel.active[data-panel="degrees"] .degree-fretboard-card .interval-neck-marker{
     min-width:17px !important;
     height:17px !important;
-    font-size:8.7px !important;
+    font-size:10.7px !important;
   }
   #mainScroll .tab-panel.active[data-panel="degrees"] .degree-fretboard-card .interval-neck-marker.is-root{
     width:17px !important;
